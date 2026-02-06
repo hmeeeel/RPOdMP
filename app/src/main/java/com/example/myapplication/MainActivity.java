@@ -70,9 +70,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initializationData(){
-        museums.add(new Museum("1"));
-        museums.add(new Museum("2"));
-        museums.add(new Museum("3"));
+        museums.add(new Museum("Национальный художественный музей", R.drawable.natioanal_hud_museum_1920x1280));
+        museums.add(new Museum("2", R.drawable.natioanal_hud_museum_1920x1280));
+        museums.add(new Museum("3", R.drawable.natioanal_hud_museum_1920x1280));
     }
 
     public boolean onCreateOptionsMenu(Menu menu) {

@@ -2,18 +2,21 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/nav_home"
-        android:icon="@android:drawable/ic_menu_rotate"
-        android:title="Главная" />
-
-    <item
-        android:id="@+id/nav_map"
-        android:title="Карта" />
+        android:title="Главная"
+        android:icon="@drawable/home_24dp"/>
 
     <item
         android:id="@+id/nav_favorites"
-        android:title="Избранное" />
+        android:title="Добавить"
+        android:icon="@drawable/add_2_24dp" />
+
+    <item
+        android:id="@+id/nav_map"
+        android:title="Карта"
+        android:icon="@android:drawable/ic_dialog_map"/>
 
     <item
         android:id="@+id/nav_settings"
-        android:title="Настройки" />
+        android:title="Настройки"
+        android:icon="@android:drawable/ic_menu_preferences"/>
 </menu>

@@ -5,6 +5,7 @@ import android.content.pm.LabeledIntent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -32,6 +33,7 @@ public class MuseumAdapter extends RecyclerView.Adapter<MuseumAdapter.ViewHolder
     public void onBindViewHolder(MuseumAdapter.ViewHolder holder, int position) {
         Museum museum = museums.get(position);
         holder.name.setText(museum.getName());
+        holder.museumImage.setImageResource(museum.getImageId());
     }
 
     @Override
@@ -41,10 +43,12 @@ public class MuseumAdapter extends RecyclerView.Adapter<MuseumAdapter.ViewHolder
 
     public static class ViewHolder extends RecyclerView.ViewHolder{
         TextView name;
+        ImageView museumImage;
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
 
             name = itemView.findViewById(R.id.name);
+            museumImage = itemView.findViewById(R.id.museumImage);
         }
     }
 }

@@ -4,5 +4,6 @@
     <item
         android:id="@+id/search"
         android:title="Поиск"
+        android:icon="@drawable/search_24dp"
         app:showAsAction="ifRoom" />
 </menu>
