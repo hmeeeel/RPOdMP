@@ -3,24 +3,26 @@ package com.example.myapplication;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import java.util.ArrayList;
+
 public class Museum implements Parcelable {
     private String name;
-    private int imageId;
+    private ArrayList<Integer> imageIds;
     private String descriprion;
     private String phone;
     private String website;
 
-    public Museum (String name, int imageId, String descriprion, String phone, String website){
+    public Museum (String name, ArrayList<Integer> imageIds, String descriprion, String phone, String website){
 
         this.name = name;
-        this.imageId = imageId;
+        this.imageIds = imageIds;
         this.descriprion = descriprion;
         this.phone = phone;
         this.website = website;
     }
-    public Museum (String name, int imageId){
+    public Museum (String name, ArrayList<Integer> imageIds){
         this.name = name;
-        this.imageId = imageId;
+        this.imageIds = imageIds;
         this.descriprion = "";
         this.phone = "";
         this.website = "";
@@ -28,8 +30,9 @@ public class Museum implements Parcelable {
     }
     public String getName() { return this.name; }
     public void setName(String name){ this.name = name; }
-    public int getImageId() { return this.imageId; }
-    public void setImageId(int imageId) { this.imageId = imageId; }
+    public ArrayList<Integer> getImageIds() { return imageIds; }
+    public void setImageIds(ArrayList<Integer> imageIds) { this.imageIds = imageIds; }
+
     public String getDescriprion() { return descriprion; }
     public void setDescriprion(String descriprion) { this.descriprion = descriprion; }
     public String getPhone() { return phone; }
@@ -39,7 +42,8 @@ public class Museum implements Parcelable {
 
     private Museum(Parcel in){
         name = in.readString();
-        imageId = in.readInt();
+        imageIds = new ArrayList<>();
+        in.readList(imageIds, Integer.class.getClassLoader());
         descriprion = in.readString();
         phone = in.readString();
         website = in.readString();
@@ -65,7 +69,7 @@ public class Museum implements Parcelable {
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(name);
-        dest.writeInt(imageId);
+        dest.writeList(imageIds);
         dest.writeString(descriprion);
         dest.writeString(phone);
         dest.writeString(website);

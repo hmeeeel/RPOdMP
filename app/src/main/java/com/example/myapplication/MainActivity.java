@@ -70,7 +70,9 @@ public class MainActivity extends AppCompatActivity implements IMuseumClick{
                 Toast.makeText(this, "Добавить", Toast.LENGTH_SHORT).show();
                 return true;
             } else if (id == R.id.nav_settings) {
-                Toast.makeText(this, "Настройки", Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
+                startActivity(intent);
+                intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                 return true;
             }
 
@@ -79,13 +81,21 @@ public class MainActivity extends AppCompatActivity implements IMuseumClick{
 
     }
     private void initializationData(){
+        ArrayList<Integer> images1 = new ArrayList<>();
+        images1.add(R.drawable.natioanal_hud_museum_1920x1280);
+        images1.add(R.drawable.natioanal_hud_museum_1920x1280);
+        images1.add(R.drawable.natioanal_hud_museum_1920x1280);
         museums.add(new Museum("Национальный художественный музей",
-                R.drawable.natioanal_hud_museum_1920x1280,
+                images1,
                 "Национальный исторический музей Республики Беларусь, до 15 сентября 2009 — Национальный музей истории и культуры Беларуси — крупнейший по числу единиц хранения музей Республики Беларусь.",
                 "8 017 327-36-65",
                 "histmuseum.by"));
-        museums.add(new Museum("2", R.drawable.natioanal_hud_museum_1920x1280));
-        museums.add(new Museum("3", R.drawable.natioanal_hud_museum_1920x1280));
+        ArrayList<Integer> images2 = new ArrayList<>();
+        images2.add(R.drawable.natioanal_hud_museum_1920x1280);
+        museums.add(new Museum("2", images2));
+        ArrayList<Integer> images3 = new ArrayList<>();
+        images3.add(R.drawable.natioanal_hud_museum_1920x1280);
+        museums.add(new Museum("3", images3));
     }
 
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -108,4 +118,10 @@ public class MainActivity extends AppCompatActivity implements IMuseumClick{
         intent.putExtra("museum", museum);
         startActivity(intent);
     }
+    protected void onResume() {
+        super.onResume();
+        BottomNavigationView bottomNav = findViewById(R.id.menu_navigation);
+        bottomNav.setSelectedItemId(R.id.nav_home);
+    }
 }
+

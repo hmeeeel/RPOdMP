@@ -1,17 +1,20 @@
 package com.example.myapplication;
 
 import android.os.Bundle;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.viewpager2.widget.ViewPager2;
 
 public class MuseumDetailActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
 
-        ImageView imageId = findViewById(R.id.detailImage);
+        setupToolbar();
+
+        ViewPager2 slider = findViewById(R.id.detailSlider);
         TextView name = findViewById(R.id.detailName);
         TextView description = findViewById(R.id.detailDescription);
         TextView phone = findViewById(R.id.detailPhone);
@@ -20,11 +23,24 @@ public class MuseumDetailActivity extends AppCompatActivity {
         Museum museum = getIntent().getParcelableExtra("museum");
 
         if (museum != null){
-        imageId.setImageResource(museum.getImageId());
-        name.setText(museum.getName());
-        description.setText(museum.getDescriprion());
-        phone.setText("Телефон: " + museum.getPhone());
-        website.setText("Сайт: " + museum.getWebsite());
+            ImageSliderAdapter sliderAdapter = new ImageSliderAdapter(museum.getImageIds());
+            slider.setAdapter(sliderAdapter);
+            name.setText(museum.getName());
+            description.setText(museum.getDescriprion());
+            phone.setText("Телефон: " + museum.getPhone());
+            website.setText("Сайт: " + museum.getWebsite());
         }
+    }
+    private void setupToolbar() {
+        Toolbar toolbar = findViewById(R.id.detailToolbar);
+        setSupportActionBar(toolbar);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowTitleEnabled(false);
+        }
+    }
+    public boolean onSupportNavigateUp() {
+        finish();
+        return true;
     }
 }

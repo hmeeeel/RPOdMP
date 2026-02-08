@@ -10,28 +10,24 @@
     app:strokeColor="#CCCCCC"
     app:strokeWidth="1dp">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="393dp"
-        android:layout_height="227dp">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
 
-        <ImageView
+        <androidx.viewpager2.widget.ViewPager2
             android:id="@+id/museumImage"
             android:layout_width="match_parent"
-            android:layout_height="161dp"
-            android:scaleType="centerCrop"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            tools:src="@drawable/ic_launcher_foreground" />
+            android:layout_height="200dp" />
 
         <TextView
             android:id="@+id/name"
-            android:layout_width="379dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="180dp"
-            android:text="TextView"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-    </androidx.constraintlayout.widget.ConstraintLayout>
+            android:padding="16dp"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+    </LinearLayout>
 
 </androidx.cardview.widget.CardView>

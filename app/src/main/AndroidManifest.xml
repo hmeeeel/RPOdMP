@@ -21,6 +21,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".MuseumDetailActivity" />
+        <activity android:name=".SettingsActivity" />
     </application>
 
 </manifest>
