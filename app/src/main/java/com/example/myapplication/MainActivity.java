@@ -1,11 +1,11 @@
 package com.example.myapplication;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.graphics.Insets;
@@ -18,7 +18,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.util.ArrayList;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements IMuseumClick{
 
     private RecyclerView recView;
     private ArrayList<Museum> museums = new ArrayList<>();
@@ -26,21 +26,36 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
+
         setContentView(R.layout.activity_main);
 
+        setupToolBar();
+        setupBottomNavigation();
+
+        initializationMuseum();
+
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
+    }
+
+    private void setupToolBar(){
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayShowTitleEnabled(false);
         }
-
+    }
+    private void initializationMuseum(){
         initializationData();
         recView = findViewById(R.id.recView);
-        MuseumAdapter museumAdapter = new MuseumAdapter(this,museums);
+        MuseumAdapter museumAdapter = new MuseumAdapter(this,museums, this);
         recView.setLayoutManager(new LinearLayoutManager(this));
         recView.setAdapter(museumAdapter);
-
+    }
+    private void setupBottomNavigation(){
         BottomNavigationView bottomNav = findViewById(R.id.menu_navigation);
         bottomNav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
@@ -52,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(this, "Карта", Toast.LENGTH_SHORT).show();
                 return true;
             } else if (id == R.id.nav_favorites) {
-                Toast.makeText(this, "Избранное", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Добавить", Toast.LENGTH_SHORT).show();
                 return true;
             } else if (id == R.id.nav_settings) {
                 Toast.makeText(this, "Настройки", Toast.LENGTH_SHORT).show();
@@ -62,15 +77,13 @@ public class MainActivity extends AppCompatActivity {
             return false;
         });
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
     }
-
     private void initializationData(){
-        museums.add(new Museum("Национальный художественный музей", R.drawable.natioanal_hud_museum_1920x1280));
+        museums.add(new Museum("Национальный художественный музей",
+                R.drawable.natioanal_hud_museum_1920x1280,
+                "Национальный исторический музей Республики Беларусь, до 15 сентября 2009 — Национальный музей истории и культуры Беларуси — крупнейший по числу единиц хранения музей Республики Беларусь.",
+                "8 017 327-36-65",
+                "histmuseum.by"));
         museums.add(new Museum("2", R.drawable.natioanal_hud_museum_1920x1280));
         museums.add(new Museum("3", R.drawable.natioanal_hud_museum_1920x1280));
     }
@@ -88,5 +101,11 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    public void onMuseumClick(Museum museum){
+        Intent intent = new Intent(this, MuseumDetailActivity.class);
+        intent.putExtra("museum", museum);
+        startActivity(intent);
     }
 }

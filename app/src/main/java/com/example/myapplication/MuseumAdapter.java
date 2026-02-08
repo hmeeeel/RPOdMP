@@ -1,14 +1,12 @@
 package com.example.myapplication;
 
 import android.content.Context;
-import android.content.pm.LabeledIntent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
@@ -16,10 +14,12 @@ import java.util.List;
 public class MuseumAdapter extends RecyclerView.Adapter<MuseumAdapter.ViewHolder> {
     private LayoutInflater inflater;
     private List<Museum> museums;
+    private IMuseumClick click;
 
-    MuseumAdapter(Context context, List<Museum> museums){
+    MuseumAdapter(Context context, List<Museum> museums, IMuseumClick click){
         this.inflater = LayoutInflater.from(context);
         this.museums = museums;
+        this.click = click;
     }
 
     @Override
@@ -34,6 +34,14 @@ public class MuseumAdapter extends RecyclerView.Adapter<MuseumAdapter.ViewHolder
         Museum museum = museums.get(position);
         holder.name.setText(museum.getName());
         holder.museumImage.setImageResource(museum.getImageId());
+        holder.itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (click != null) {
+                    click.onMuseumClick(museum);
+                }
+            }
+        });
     }
 
     @Override
@@ -44,7 +52,7 @@ public class MuseumAdapter extends RecyclerView.Adapter<MuseumAdapter.ViewHolder
     public static class ViewHolder extends RecyclerView.ViewHolder{
         TextView name;
         ImageView museumImage;
-        public ViewHolder(@NonNull View itemView) {
+        public ViewHolder(View itemView) {
             super(itemView);
 
             name = itemView.findViewById(R.id.name);

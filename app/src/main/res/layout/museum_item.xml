@@ -12,7 +12,7 @@
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="393dp"
-        android:layout_height="312dp">
+        android:layout_height="227dp">
 
         <ImageView
             android:id="@+id/museumImage"
