@@ -1,3 +1,22 @@
 <resources>
     <string name="app_name">My Application</string>
+
+    <string name="nav_home">Главная</string>
+    <string name="nav_map">Карта</string>
+    <string name="nav_favorites">Добавить</string>
+    <string name="nav_settings">Настройки</string>
+
+    <string name="search">Поиск</string>
+
+    <string name="settings_title">Настройки</string>
+    <string name="language_section">ЯЗЫК</string>
+    <string name="language_russian">Русский</string>
+    <string name="language_english">Английский</string>
+    <string name="theme_section">ТЕМА</string>
+    <string name="theme_light">Светлая</string>
+    <string name="theme_dark">Тёмная</string>
+
+    <string name="phone_label">Телефон:</string>
+    <string name="website_label">Сайт:</string>
+
 </resources>

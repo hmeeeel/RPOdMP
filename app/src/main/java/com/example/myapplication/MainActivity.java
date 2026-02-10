@@ -18,7 +18,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.util.ArrayList;
 
-public class MainActivity extends AppCompatActivity implements IMuseumClick{
+public class MainActivity extends BaseActivity implements IMuseumClick{
 
     private RecyclerView recView;
     private ArrayList<Museum> museums = new ArrayList<>();
@@ -49,6 +49,7 @@ public class MainActivity extends AppCompatActivity implements IMuseumClick{
         }
     }
     private void initializationMuseum(){
+        museums.clear(); // не дубл recreate
         initializationData();
         recView = findViewById(R.id.recView);
         MuseumAdapter museumAdapter = new MuseumAdapter(this,museums, this);
@@ -61,7 +62,6 @@ public class MainActivity extends AppCompatActivity implements IMuseumClick{
             int id = item.getItemId();
 
             if (id == R.id.nav_home) {
-                Toast.makeText(this, "Главная", Toast.LENGTH_SHORT).show();
                 return true;
             } else if (id == R.id.nav_map) {
                 Toast.makeText(this, "Карта", Toast.LENGTH_SHORT).show();
@@ -71,8 +71,8 @@ public class MainActivity extends AppCompatActivity implements IMuseumClick{
                 return true;
             } else if (id == R.id.nav_settings) {
                 Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
-                startActivity(intent);
                 intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                startActivity(intent);
                 return true;
             }
 
@@ -120,6 +120,7 @@ public class MainActivity extends AppCompatActivity implements IMuseumClick{
     }
     protected void onResume() {
         super.onResume();
+
         BottomNavigationView bottomNav = findViewById(R.id.menu_navigation);
         bottomNav.setSelectedItemId(R.id.nav_home);
     }

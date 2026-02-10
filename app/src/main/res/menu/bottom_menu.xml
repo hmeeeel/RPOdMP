@@ -2,21 +2,21 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/nav_home"
-        android:title="Главная"
+        android:title="@string/nav_home"
         android:icon="@drawable/home_24dp"/>
 
     <item
         android:id="@+id/nav_favorites"
-        android:title="Добавить"
+        android:title="@string/nav_favorites"
         android:icon="@drawable/add_2_24dp" />
 
     <item
         android:id="@+id/nav_map"
-        android:title="Карта"
+        android:title="@string/nav_map"
         android:icon="@android:drawable/ic_dialog_map"/>
 
     <item
         android:id="@+id/nav_settings"
-        android:title="Настройки"
+        android:title="@string/nav_settings"
         android:icon="@android:drawable/ic_menu_preferences"/>
 </menu>

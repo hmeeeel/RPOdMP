@@ -13,20 +13,28 @@ import androidx.appcompat.widget.Toolbar;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
-public class SettingsActivity extends AppCompatActivity {
+public class SettingsActivity extends BaseActivity {
+    private RadioGroup languageRadioGroup;
+    private RadioButton radioRussian, radioEnglish;
+    private SwitchCompat themeSwitch;
+    private boolean isInitialized = false;
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
 
         setupToolbar();
 
-        RadioGroup languageRadioGroup = findViewById(R.id.languageRadioGroup);
-        RadioButton radioRussian = findViewById(R.id.radioRussian);
-        RadioButton radioEnglish = findViewById(R.id.radioEnglish);
-        SwitchCompat themeSwitch = findViewById(R.id.themeSwitch);
+        languageRadioGroup = findViewById(R.id.languageRadioGroup);
+        radioRussian = findViewById(R.id.radioRussian);
+        radioEnglish = findViewById(R.id.radioEnglish);
+        themeSwitch = findViewById(R.id.themeSwitch);
+
+        loadCurSettings();
+        setupListeners();
 
         setupBottomNavigation();
 
+        isInitialized = true;
     }
     private void setupToolbar() {
         Toolbar toolbar = findViewById(R.id.settingsToolbar);
@@ -62,5 +70,55 @@ public class SettingsActivity extends AppCompatActivity {
     public boolean onSupportNavigateUp() {
         finish();
         return true;
+    }
+
+    private void loadCurSettings() {
+        String currentLanguage = settingsManager.getLang();
+        if (SettingsManager.LANGUAGE_RUSSIAN.equals(currentLanguage)) {
+            radioRussian.setChecked(true);
+        } else {
+            radioEnglish.setChecked(true);
+        }
+
+        boolean isDark = settingsManager.isDarkTheme();
+        themeSwitch.setChecked(isDark);
+    }
+
+    private void setupListeners() {
+        languageRadioGroup.setOnCheckedChangeListener((group, checkedId) -> {
+            if (!isInitialized) return;
+
+            String newLanguage;
+            if (checkedId == R.id.radioRussian) {
+                newLanguage = SettingsManager.LANGUAGE_RUSSIAN;
+            } else {
+                newLanguage = SettingsManager.LANGUAGE_ENGLISH;
+            }
+
+            if (!newLanguage.equals(settingsManager.getLang())) {
+                settingsManager.setLang(newLanguage);
+                recreate();
+            }
+        });
+
+        themeSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (!isInitialized) return;
+
+            String newTheme = isChecked ?
+                    SettingsManager.THEME_DARK : SettingsManager.THEME_LIGHT;
+
+            if (!newTheme.equals(settingsManager.getTheme())) {
+                settingsManager.setTheme(newTheme);
+                recreate();
+            }
+        });
+    }
+
+    protected void onResume() {
+        super.onResume();
+        BottomNavigationView bottomNav = findViewById(R.id.menu_navigation);
+        if (bottomNav != null) {
+            bottomNav.setSelectedItemId(R.id.nav_settings);
+        }
     }
 }

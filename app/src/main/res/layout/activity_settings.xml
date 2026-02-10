@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="?android:attr/windowBackground"
     tools:context=".SettingsActivity">
 
     <androidx.appcompat.widget.Toolbar
@@ -15,7 +16,8 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:navigationIcon="@drawable/back_24dp"
-        app:title="Настройки"
+        app:title="@string/settings_title"
+        app:titleTextColor="#FFFFFF"
         app:contentInsetStartWithNavigation="0dp"/>
 
     <ScrollView
@@ -43,7 +45,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
-                    android:text="ЯЗЫК"
+                    android:text="@string/language_section"
+                    android:textColor="?android:attr/textColorPrimary"
                     android:textSize="18sp"
                     android:textStyle="bold" />
             </LinearLayout>
@@ -59,9 +62,10 @@
                     android:id="@+id/radioRussian"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:checked="true"
+
                     android:paddingVertical="12dp"
-                    android:text="Русский"
+                    android:text="@string/language_russian"
+                    android:textColor="?android:attr/textColorPrimary"
                     android:textSize="18sp" />
 
                 <RadioButton
@@ -69,15 +73,15 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:paddingVertical="12dp"
-                    android:text="English"
+                    android:text="@string/language_english"
+                    android:textColor="?android:attr/textColorPrimary"
                     android:textSize="18sp" />
             </RadioGroup>
 
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
-                android:layout_marginVertical="16dp"
-                android:background="#E0E0E0" />
+                android:layout_marginVertical="16dp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -90,7 +94,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
-                    android:text="ТЕМА"
+                    android:text="@string/theme_section"
+                    android:textColor="?android:attr/textColorPrimary"
                     android:textSize="18sp"
                     android:textStyle="bold" />
             </LinearLayout>
@@ -105,7 +110,8 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Светлая"
+                    android:text="@string/theme_light"
+                    android:textColor="?android:attr/textColorPrimary"
                     android:textSize="18sp" />
 
                 <androidx.appcompat.widget.SwitchCompat
@@ -118,7 +124,8 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Тёмная"
+                    android:text="@string/theme_dark"
+                    android:textColor="?android:attr/textColorPrimary"
                     android:textSize="18sp" />
             </LinearLayout>
 
@@ -129,6 +136,9 @@
         android:id="@+id/menu_navigation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="?attr/colorPrimary"
+        app:itemIconTint="@android:color/white"
+        app:itemTextColor="@android:color/white"
         app:labelVisibilityMode="labeled"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
