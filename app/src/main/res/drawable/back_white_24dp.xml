@@ -1,7 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:autoMirrored="true"
     android:height="24dp"
-    android:tint="#000000"
+    android:tint="#FFFFFF"
     android:viewportHeight="960"
     android:viewportWidth="960"
     android:width="24dp">

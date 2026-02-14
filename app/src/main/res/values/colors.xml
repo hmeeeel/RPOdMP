@@ -1,19 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="toolbar_light">#F0F4EF</color>
-    <color name="navigation_light">#FFFFFF</color>
-    <color name="background_light">#FFFFFF</color>
-    <color name="text_primary_light">#000000</color>
-    <color name="text_secondary_light">#666666</color>
-    <color name="card_background_light">#FFFFFF</color>
-
-    <color name="toolbar_dark">#1E1E1E</color>
-    <color name="navigation_dark">#1E1E1E</color>
-    <color name="background_dark">#121212</color>
-    <color name="text_primary_dark">#FFFFFF</color>
-    <color name="text_secondary_dark">#B3B3B3</color>
-    <color name="card_background_dark">#252525</color>
-
+    <color name="primary_light">#F0F4EF</color>
+    <color name="light">#FFFFFF</color>
+    <color name="text_light">#000000</color>
+    <color name="text_light_2">#666666</color>
     <color name="border_light">#E0E0E0</color>
+
+    <color name="primary_dark">#1E1E1E</color>
+    <color name="dark">#121212</color>
+    <color name="elevated_dark">#252525</color>
+    <color name="text_dark">#FFFFFF</color>
+    <color name="text_dark_2">#B3B3B3</color>
     <color name="border_dark">#424242</color>
 </resources>

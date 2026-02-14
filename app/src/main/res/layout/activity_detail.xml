@@ -14,8 +14,8 @@
         android:background="?attr/colorPrimary"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:navigationIcon="@drawable/back_24dp"
-        app:titleTextColor="#FFFFFF" />
+        app:navigationIcon="?attr/backIcon"
+        app:titleTextColor="?attr/iconColor" />
 
     <ScrollView
         android:layout_width="0dp"
