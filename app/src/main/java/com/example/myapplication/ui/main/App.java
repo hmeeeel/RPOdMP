@@ -1,6 +1,8 @@
-package com.example.myapplication;
+package com.example.myapplication.ui.main;
 
 import android.app.Application;
+
+import com.example.myapplication.data.repository.MuseumRepository;
 
 public class App extends Application {
 

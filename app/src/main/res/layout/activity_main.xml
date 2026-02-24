@@ -5,7 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".ui.main.MainActivity">
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recView"
@@ -33,7 +33,7 @@
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
         android:contentDescription="@string/add_museum"
-        android:src="@drawable/add_2_24dp"
+        android:src="@drawable/ic_add_2_24dp"
         app:layout_constraintBottom_toTopOf="@+id/menu_navigation"
         app:layout_constraintEnd_toEndOf="parent"
         app:tint="@android:color/white" />

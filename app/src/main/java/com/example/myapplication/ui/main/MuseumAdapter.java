@@ -1,19 +1,26 @@
-package com.example.myapplication;
+package com.example.myapplication.ui.main;
 
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+
+import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
+
+import com.example.myapplication.ui.detail.IMuseumClick;
+import com.example.myapplication.ui.detail.ImageSliderAdapter;
+import com.example.myapplication.R;
+import com.example.myapplication.data.model.Museum;
 
 import java.util.List;
 
 public class MuseumAdapter extends RecyclerView.Adapter<MuseumAdapter.ViewHolder> {
-    private LayoutInflater inflater;
-    private List<Museum> museums;
-    private IMuseumClick click;
+    private final LayoutInflater inflater;
+    private final List<Museum> museums;
+    private final IMuseumClick click;
 
     MuseumAdapter(Context context, List<Museum> museums, IMuseumClick click){
         this.inflater = LayoutInflater.from(context);
@@ -21,8 +28,9 @@ public class MuseumAdapter extends RecyclerView.Adapter<MuseumAdapter.ViewHolder
         this.click = click;
     }
 
+    @NonNull
     @Override
-    public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
 
         View view = inflater.inflate(R.layout.museum_item, parent, false);
         return new ViewHolder(view);

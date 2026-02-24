@@ -1,8 +1,10 @@
-package com.example.myapplication;
+package com.example.myapplication.ui.main;
 
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.myapplication.ui.settings.SettingsManager;
 
 public abstract class BaseActivity extends AppCompatActivity {
     protected SettingsManager settingsManager;
@@ -35,4 +37,5 @@ public abstract class BaseActivity extends AppCompatActivity {
 
         if (languageChanged || themeChanged) recreate();
     }
+    
 }

@@ -1,4 +1,4 @@
-package com.example.myapplication;
+package com.example.myapplication.ui.main;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -6,11 +6,8 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -18,6 +15,13 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.myapplication.ui.add.AddMuseumActivity;
+import com.example.myapplication.ui.detail.IMuseumClick;
+import com.example.myapplication.ui.detail.MuseumDetailActivity;
+import com.example.myapplication.R;
+import com.example.myapplication.ui.settings.SettingsActivity;
+import com.example.myapplication.data.model.Museum;
+import com.example.myapplication.data.repository.MuseumRepository;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
@@ -26,11 +30,12 @@ import java.util.List;
 import androidx.core.splashscreen.SplashScreen;
 public class MainActivity extends BaseActivity implements IMuseumClick {
 
-    private RecyclerView recView;
     private MuseumAdapter museumAdapter;
-    private ArrayList<Museum> museums = new ArrayList<>();
+    private final ArrayList<Museum> museums = new ArrayList<>();
     private MuseumRepository repository;
     private boolean isAppReady = false;
+    private static boolean splashAlreadyShown = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         SplashScreen splashScreen = SplashScreen.installSplashScreen(this);
@@ -38,24 +43,21 @@ public class MainActivity extends BaseActivity implements IMuseumClick {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        splashScreen.setKeepOnScreenCondition(() -> !isAppReady); //сплеш, пока  false
-
-        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+        if (!splashAlreadyShown) {
+            splashScreen.setKeepOnScreenCondition(() -> !isAppReady);
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                isAppReady = true;
+                splashAlreadyShown = true;
+            }, 2000);
+        } else {
             isAppReady = true;
-        }, 2000);
+        }
 
         repository = MuseumRepository.getInstance(this);
-
         setupToolBar();
         setupBottomNavigation();
         setupRecyclerView();
         setupFAB();
-
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
     }
 
     private void setupToolBar() {
@@ -67,7 +69,7 @@ public class MainActivity extends BaseActivity implements IMuseumClick {
     }
 
     private void setupRecyclerView() {
-        recView = findViewById(R.id.recView);
+        RecyclerView recView = findViewById(R.id.recView);
         museumAdapter = new MuseumAdapter(this, museums, this);
         recView.setLayoutManager(new LinearLayoutManager(this));
         recView.setAdapter(museumAdapter);
@@ -82,7 +84,7 @@ public class MainActivity extends BaseActivity implements IMuseumClick {
     }
 
     private void loadMuseums() {
-        repository.getAllMuseums(new MuseumRepository.DataCallback<List<Museum>>() {
+        repository.getAllMuseums(new MuseumRepository.DataCallback<>() {
             @Override
             public void onSuccess(List<Museum> data) {
                 if (isDestroyed() || isFinishing()) return;

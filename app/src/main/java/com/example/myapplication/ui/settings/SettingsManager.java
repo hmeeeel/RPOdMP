@@ -1,9 +1,11 @@
-package com.example.myapplication;
+package com.example.myapplication.ui.settings;
 
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+
+import com.example.myapplication.R;
 
 import java.util.Locale;
 
@@ -13,21 +15,20 @@ public class SettingsManager {
 
     public static final String THEME_LIGHT = "light";
     public static final String THEME_DARK = "dark";
-    private SharedPreferences preferences;
-    private Context context;
+    private final SharedPreferences preferences;
+
     public SettingsManager(Context context){
-        this.context = context;
-        this.preferences = this.context.getSharedPreferences("App", Context.MODE_PRIVATE);
+        this.preferences = context.getSharedPreferences("App", Context.MODE_PRIVATE);
     }
     public void setLang(String language){
-        preferences.edit().putString("language", language).apply(); ;
+        preferences.edit().putString("language", language).apply();
     }
     public String getLang() {
         return preferences.getString("language", "ru");
     }
 
     public void setTheme(String theme){
-        preferences.edit().putString("theme", theme).apply(); ;
+        preferences.edit().putString("theme", theme).apply();
     }
     public String getTheme(){
         return preferences.getString("theme","light");

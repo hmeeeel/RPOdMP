@@ -1,4 +1,4 @@
-package com.example.myapplication;
+package com.example.myapplication.data.model;
 
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -6,6 +6,8 @@ import android.os.Parcelable;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 import androidx.room.TypeConverters;
+
+import com.example.myapplication.data.db.Converters;
 
 import java.util.ArrayList;
 
@@ -62,7 +64,7 @@ public class Museum implements Parcelable {
         website = in.readString();
     }
 
-    public static Creator<Museum> CREATOR = new Creator<Museum>() {
+    public static Creator<Museum> CREATOR = new Creator<>() {
         @Override
         public Museum createFromParcel(Parcel source) {
             return new Museum(source);

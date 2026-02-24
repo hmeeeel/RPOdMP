@@ -1,4 +1,4 @@
-package com.example.myapplication;
+package com.example.myapplication.ui.add;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -10,6 +10,13 @@ import android.widget.Toast;
 
 
 import androidx.appcompat.widget.Toolbar;
+
+import com.example.myapplication.R;
+import com.example.myapplication.data.model.Museum;
+import com.example.myapplication.data.repository.MuseumRepository;
+import com.example.myapplication.ui.detail.MuseumDetailActivity;
+import com.example.myapplication.ui.main.BaseActivity;
+import com.example.myapplication.ui.main.MainActivity;
 
 import java.util.ArrayList;
 
@@ -110,7 +117,7 @@ public class AddMuseumActivity extends BaseActivity {
             editingMuseum.setPhone(phone);
             editingMuseum.setWebsite(website);
 
-            repository.updateMuseum(editingMuseum, new MuseumRepository.DataCallback<Void>() {
+            repository.updateMuseum(editingMuseum, new MuseumRepository.DataCallback<>() {
                 @Override
                 public void onSuccess(Void data) {
                     Toast.makeText(AddMuseumActivity.this,
@@ -138,9 +145,12 @@ public class AddMuseumActivity extends BaseActivity {
                 public void onSuccess(Long id) {
                     Toast.makeText(AddMuseumActivity.this,
                             getString(R.string.museum_added), Toast.LENGTH_SHORT).show();
-                    Intent intent = new Intent(AddMuseumActivity.this, MainActivity.class);
-                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                    startActivity(intent);
+
+                    // белый экран + сплеш
+                    // Intent intent = new Intent(AddMuseumActivity.this, MainActivity.class);
+                    // intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    // startActivity(intent);
+
                     finish();
                 }
 

@@ -1,16 +1,17 @@
-package com.example.myapplication;
+package com.example.myapplication.ui.settings;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.appcompat.widget.Toolbar;
 
+import com.example.myapplication.ui.add.AddMuseumActivity;
+import com.example.myapplication.ui.main.BaseActivity;
+import com.example.myapplication.R;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class SettingsActivity extends BaseActivity {
@@ -60,11 +61,7 @@ public class SettingsActivity extends BaseActivity {
                 Intent intent = new Intent(this, AddMuseumActivity.class);
                 startActivity(intent);
                 return true;
-            } else if (id == R.id.nav_settings) {
-                return true;
-            }
-
-            return false;
+            } else return id == R.id.nav_settings;
         });
     }
 

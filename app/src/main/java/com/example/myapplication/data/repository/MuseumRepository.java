@@ -1,19 +1,22 @@
-package com.example.myapplication;
+package com.example.myapplication.data.repository;
 
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 
-import java.util.ArrayList;
+import com.example.myapplication.data.db.MuseumDAO;
+import com.example.myapplication.data.db.MuseumDB;
+import com.example.myapplication.data.model.Museum;
+
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 
 public class MuseumRepository {
-    private MuseumDAO museumDAO;
-    private ExecutorService executorService;
-    private Handler mainHandler;
+    private final MuseumDAO museumDAO;
+    private final ExecutorService executorService;
+    private final Handler mainHandler;
     private static volatile MuseumRepository instance;
     private  MuseumRepository(Context context){
         MuseumDB db = MuseumDB.getInstance(context);

@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <application
-        android:name=".App"
+        android:name=".ui.main.App"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -13,7 +13,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme_Light">
         <activity
-            android:name=".MainActivity"
+            android:name=".ui.main.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.App.Starting" >
             <intent-filter>
@@ -22,12 +22,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".MuseumDetailActivity" />
-        <activity android:name=".SettingsActivity" />
+        <activity android:name=".ui.detail.MuseumDetailActivity" />
+        <activity android:name=".ui.settings.SettingsActivity" />
         <activity
-            android:name=".AddMuseumActivity"
+            android:name=".ui.add.AddMuseumActivity"
             android:exported="false"
-            android:parentActivityName=".MainActivity" />
+            android:parentActivityName=".ui.main.MainActivity" />
     </application>
 
 </manifest>

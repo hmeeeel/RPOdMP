@@ -1,4 +1,4 @@
-package com.example.myapplication;
+package com.example.myapplication.ui.detail;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
@@ -10,9 +10,14 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.viewpager2.widget.ViewPager2;
+
+import com.example.myapplication.ui.add.AddMuseumActivity;
+import com.example.myapplication.ui.main.BaseActivity;
+import com.example.myapplication.R;
+import com.example.myapplication.data.model.Museum;
+import com.example.myapplication.data.repository.MuseumRepository;
 
 public class MuseumDetailActivity extends BaseActivity {
     private Museum museum;
@@ -39,24 +44,22 @@ public class MuseumDetailActivity extends BaseActivity {
             return;
         }
 
-        if (museum != null){
-            ImageSliderAdapter sliderAdapter = new ImageSliderAdapter(museum.getImageIds());
-            slider.setAdapter(sliderAdapter);
-            name.setText(museum.getName());
-            description.setText(museum.getDescriprion());
-            if (museum.getPhone() != null && !museum.getPhone().isEmpty()) {
-                phone.setVisibility(View.VISIBLE);
-                phone.setText(getString(R.string.phone_label) + " " + museum.getPhone());
-            } else {
-                phone.setVisibility(View.GONE);
-            }
+        ImageSliderAdapter sliderAdapter = new ImageSliderAdapter(museum.getImageIds());
+        slider.setAdapter(sliderAdapter);
+        name.setText(museum.getName());
+        description.setText(museum.getDescriprion());
+        if (museum.getPhone() != null && !museum.getPhone().isEmpty()) {
+            phone.setVisibility(View.VISIBLE);
+            phone.setText(String.format("%s %s", getString(R.string.phone_label), museum.getPhone()));
+        } else {
+            phone.setVisibility(View.GONE);
+        }
 
-            if (museum.getWebsite() != null && !museum.getWebsite().isEmpty()) {
-                website.setVisibility(View.VISIBLE);
-                website.setText(getString(R.string.website_label) + " " + museum.getWebsite());
-            } else {
-                website.setVisibility(View.GONE);
-            }
+        if (museum.getWebsite() != null && !museum.getWebsite().isEmpty()) {
+            website.setVisibility(View.VISIBLE);
+            website.setText(String.format("%s %s", getString(R.string.website_label), museum.getWebsite()));
+        } else {
+            website.setVisibility(View.GONE);
         }
     }
     private void setupToolbar() {
@@ -108,7 +111,7 @@ public class MuseumDetailActivity extends BaseActivity {
                 .show();
     }
     private void deleteMuseum() {
-        repository.deleteMuseum(museum, new MuseumRepository.DataCallback<Void>() {
+        repository.deleteMuseum(museum, new MuseumRepository.DataCallback<>() {
             @Override
             public void onSuccess(Void data) {
                 Toast.makeText(MuseumDetailActivity.this,
