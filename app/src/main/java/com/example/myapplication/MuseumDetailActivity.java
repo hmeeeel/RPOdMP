@@ -21,7 +21,9 @@ public class MuseumDetailActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
-        repository = new MuseumRepository(this);
+
+        repository = MuseumRepository.getInstance(this);
+
         setupToolbar();
 
         ViewPager2 slider = findViewById(R.id.detailSlider);
@@ -122,5 +124,4 @@ public class MuseumDetailActivity extends BaseActivity {
             }
         });
     }
-
 }

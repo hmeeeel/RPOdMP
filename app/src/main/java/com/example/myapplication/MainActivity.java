@@ -34,7 +34,7 @@ public class MainActivity extends BaseActivity implements IMuseumClick {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        repository = new MuseumRepository(this);
+        repository = MuseumRepository.getInstance(this);
 
         setupToolBar();
         setupBottomNavigation();

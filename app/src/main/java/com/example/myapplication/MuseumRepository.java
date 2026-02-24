@@ -14,12 +14,29 @@ public class MuseumRepository {
     private MuseumDAO museumDAO;
     private ExecutorService executorService;
     private Handler mainHandler;
-    public MuseumRepository(Context context){
+    private static volatile MuseumRepository instance;
+    private  MuseumRepository(Context context){
         MuseumDB db = MuseumDB.getInstance(context);
         museumDAO = db.museumDAO();
         executorService = Executors.newSingleThreadExecutor();
         mainHandler = new Handler(Looper.getMainLooper());
     }
+
+    public static MuseumRepository getInstance(Context context) {
+        if (instance == null) {
+            synchronized (MuseumRepository.class) {
+                if (instance == null) {
+                    instance = new MuseumRepository(context);
+                }
+            }
+        }
+        return instance;
+    }
+
+    public void shutdown() {
+        executorService.shutdown();
+    }
+
     public interface DataCallback<T> {
         void onSuccess(T data);
         void onError(Exception e);

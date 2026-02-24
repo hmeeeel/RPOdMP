@@ -1,5 +1,6 @@
 package com.example.myapplication;
 
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,15 +11,15 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
 public class ImageSliderAdapter extends RecyclerView.Adapter<ImageSliderAdapter.SliderViewHolder> {
-    private List<Integer> imageIds;
+    private List<String> imageIds;
     private IImageClick click;
 
-    public ImageSliderAdapter(List<Integer> imageIds) {
+    public ImageSliderAdapter(List<String> imageIds) {
         this.imageIds = imageIds;
         this.click = null;
     }
 
-    public ImageSliderAdapter(List<Integer> imageIds, IImageClick clickListener) {
+    public ImageSliderAdapter(List<String> imageIds, IImageClick clickListener) {
         this.imageIds = imageIds;
         this.click = clickListener;
     }
@@ -32,12 +33,22 @@ public class ImageSliderAdapter extends RecyclerView.Adapter<ImageSliderAdapter.
 
     @Override
     public void onBindViewHolder(SliderViewHolder holder, int position) {
-        holder.imageView.setImageResource(imageIds.get(position));
-        holder.imageView.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                if (click != null) {
-                    click.onImageClick();
-                }
+        String imageName = imageIds.get(position);
+        Context context = holder.imageView.getContext();
+
+        int resId = context.getResources().getIdentifier(
+                imageName, "drawable", context.getPackageName()
+        );
+
+        if (resId != 0) {
+            holder.imageView.setImageResource(resId);
+        } else {
+            holder.imageView.setImageResource(R.drawable.natioanal_hud_museum_1920x1280);
+        }
+
+        holder.imageView.setOnClickListener(v -> {
+            if (click != null) {
+                click.onImageClick();
             }
         });
     }

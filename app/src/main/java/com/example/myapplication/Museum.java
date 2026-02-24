@@ -15,13 +15,13 @@ public class Museum implements Parcelable {
     @PrimaryKey(autoGenerate = true)
     private int id;
     private String name;
-    private ArrayList<Integer> imageIds;
+    private ArrayList<String> imageIds;
     private String descriprion;
     private String phone;
     private String website;
     public Museum() {
     }
-    public Museum (String name, ArrayList<Integer> imageIds, String descriprion, String phone, String website){
+    public Museum (String name, ArrayList<String> imageIds, String descriprion, String phone, String website){
 
         this.name = name;
         this.imageIds = imageIds;
@@ -29,7 +29,7 @@ public class Museum implements Parcelable {
         this.phone = phone;
         this.website = website;
     }
-    public Museum (String name, ArrayList<Integer> imageIds){
+    public Museum (String name, ArrayList<String> imageIds){
         this.name = name;
         this.imageIds = imageIds;
         this.descriprion = "";
@@ -42,8 +42,8 @@ public class Museum implements Parcelable {
 
     public String getName() { return this.name; }
     public void setName(String name){ this.name = name; }
-    public ArrayList<Integer> getImageIds() { return imageIds; }
-    public void setImageIds(ArrayList<Integer> imageIds) { this.imageIds = imageIds; }
+    public ArrayList<String> getImageIds() { return imageIds; }
+    public void setImageIds(ArrayList<String> imageIds) { this.imageIds = imageIds; }
 
     public String getDescriprion() { return descriprion; }
     public void setDescriprion(String descriprion) { this.descriprion = descriprion; }
@@ -56,7 +56,7 @@ public class Museum implements Parcelable {
         id = in.readInt();
         name = in.readString();
         imageIds = new ArrayList<>();
-        in.readList(imageIds, Integer.class.getClassLoader());
+        in.readStringList(imageIds);
         descriprion = in.readString();
         phone = in.readString();
         website = in.readString();
@@ -83,7 +83,7 @@ public class Museum implements Parcelable {
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeInt(id);
         dest.writeString(name);
-        dest.writeList(imageIds);
+        dest.writeStringList(imageIds);
         dest.writeString(descriprion);
         dest.writeString(phone);
         dest.writeString(website);

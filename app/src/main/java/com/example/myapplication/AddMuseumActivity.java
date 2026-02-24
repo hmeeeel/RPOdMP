@@ -28,7 +28,7 @@ public class AddMuseumActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add);
 
-        repository = new MuseumRepository(this);
+        repository = MuseumRepository.getInstance(this);
 
         setupToolbar();
         initializeViews();
@@ -101,8 +101,8 @@ public class AddMuseumActivity extends BaseActivity {
             return;
         }
 
-        ArrayList<Integer> defaultImages = new ArrayList<>();
-        defaultImages.add(R.drawable.natioanal_hud_museum_1920x1280);
+        ArrayList<String> defaultImages = new ArrayList<>();
+        defaultImages.add("natioanal_hud_museum_1920x1280");
 
         if (isEditMode && editingMuseum != null) {
             editingMuseum.setName(name);
@@ -116,10 +116,10 @@ public class AddMuseumActivity extends BaseActivity {
                     Toast.makeText(AddMuseumActivity.this,
                             getString(R.string.museum_updated), Toast.LENGTH_SHORT).show();
 
-                    Intent intent = new Intent(AddMuseumActivity.this, MainActivity.class);
+                    Intent intent = new Intent(AddMuseumActivity.this, MuseumDetailActivity.class);
+                    intent.putExtra("museum", editingMuseum);
                     intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                     startActivity(intent);
-                    finish();
                     finish();
                 }
 
