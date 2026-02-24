@@ -54,10 +54,11 @@ public class SettingsActivity extends BaseActivity {
                 finish();
                 return true;
             } else if (id == R.id.nav_map) {
-                Toast.makeText(this, "Карта", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.map), Toast.LENGTH_SHORT).show();
                 return true;
             } else if (id == R.id.nav_favorites) {
-                Toast.makeText(this, "Добавить", Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(this, AddMuseumActivity.class);
+                startActivity(intent);
                 return true;
             } else if (id == R.id.nav_settings) {
                 return true;

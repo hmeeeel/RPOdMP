@@ -19,4 +19,30 @@
     <string name="phone_label">Phone:</string>
     <string name="website_label">Website:</string>
 
+    <string name="map">Map</string>
+
+    <string name="add_museum">Add Museum</string>
+    <string name="edit_museum">Edit Museum</string>
+    <string name="museum_name">Museum name *</string>
+    <string name="description">Description</string>
+    <string name="required_field">* — required field</string>
+    <string name="error_empty_name">Enter museum name</string>
+    <string name="save">Save</string>
+    <string name="museum_added">Museum added</string>
+    <string name="museum_updated">Museum updated</string>
+    <string name="error_add">Error adding: </string>
+    <string name="error_update">Error updating: </string>
+
+    <string name="action_edit">Edit</string>
+    <string name="action_delete">Delete</string>
+    <string name="museum_deleted">Museum deleted</string>
+    <string name="error_delete">Delete error: </string>
+    <string name="error_load">Load error: </string>
+
+    <string name="delete_dialog">Delete museum?</string>
+    <string name="delete_dialog_message">Are you sure you want to delete \"%s\"?\n\nThis action cannot be undone.</string>
+    <string name="delete">Delete</string>
+    <string name="cancel">Cancel</string>
+    <string name="error">Error</string>
+
 </resources>

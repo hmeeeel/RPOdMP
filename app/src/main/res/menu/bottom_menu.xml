@@ -18,5 +18,5 @@
     <item
         android:id="@+id/nav_settings"
         android:title="@string/nav_settings"
-        android:icon="@android:drawable/ic_menu_preferences"/>
+        android:icon="@drawable/settings_24dp"/>
 </menu>

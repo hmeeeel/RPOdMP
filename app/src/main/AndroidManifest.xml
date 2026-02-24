@@ -22,6 +22,10 @@
         </activity>
         <activity android:name=".MuseumDetailActivity" />
         <activity android:name=".SettingsActivity" />
+        <activity
+            android:name=".AddMuseumActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity" />
     </application>
 
 </manifest>

@@ -18,5 +18,31 @@
 
     <string name="phone_label">Телефон:</string>
     <string name="website_label">Сайт:</string>
+    <string name="map">Карта</string>
+
+    <string name="add_museum">Добавить музей</string>
+    <string name="edit_museum">Редактировать музей</string>
+    <string name="museum_name">Название музея *</string>
+    <string name="description">Описание</string>
+    <string name="required_field">* — обязательное поле</string>
+    <string name="error_empty_name">Введите название музея</string>
+    <string name="save">Сохранить</string>
+    <string name="museum_added">Музей добавлен</string>
+    <string name="museum_updated">Музей обновлён</string>
+    <string name="error_add">Ошибка при добавлении: </string>
+    <string name="error_update">Ошибка при обновлении: </string>
+
+    <string name="action_edit">Редактировать</string>
+    <string name="action_delete">Удалить</string>
+    <string name="museum_deleted">Музей удалён</string>
+    <string name="error_delete">Ошибка удаления: </string>
+    <string name="error_load">Ошибка загрузки: </string>
+
+    <string name="delete_dialog">Удалить музей?</string>
+    <string name="delete_dialog_message">Вы уверены, что хотите удалить \"%s\"?\n\nЭто действие нельзя отменить.</string>
+    <string name="delete">Удалить</string>
+    <string name="cancel">Отмена</string>
+    <string name="error">Ошибка</string>
+
 
 </resources>
