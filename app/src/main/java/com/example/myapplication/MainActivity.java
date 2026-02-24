@@ -2,6 +2,8 @@ package com.example.myapplication;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -21,18 +23,26 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
 import java.util.List;
-
+import androidx.core.splashscreen.SplashScreen;
 public class MainActivity extends BaseActivity implements IMuseumClick {
 
     private RecyclerView recView;
     private MuseumAdapter museumAdapter;
     private ArrayList<Museum> museums = new ArrayList<>();
     private MuseumRepository repository;
-
+    private boolean isAppReady = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        SplashScreen splashScreen = SplashScreen.installSplashScreen(this);
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        splashScreen.setKeepOnScreenCondition(() -> !isAppReady); //сплеш, пока  false
+
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            isAppReady = true;
+        }, 2000);
 
         repository = MuseumRepository.getInstance(this);
 

@@ -8,12 +8,10 @@
     <group
         android:name="scaleGroup"
         android:pivotX="54"
-        android:pivotY="54"
-        android:scaleX="0.8"
-        android:scaleY="0.8">
+        android:pivotY="54">
 
         <path
-            android:fillColor="#1E1E1E"
+            android:fillColor="@color/primary_dark"
             android:pathData="M10,90 L10,18 L30,18 L54,60 L78,18 L98,18 L98,90 L82,90 L82,45 L58,87 L50,87 L26,45 L26,90 Z"/>
 
     </group>
