@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">My Application</string>
+    <string name="app_name">Museum</string>
 
     <string name="nav_home">Home</string>
     <string name="nav_map">Map</string>
