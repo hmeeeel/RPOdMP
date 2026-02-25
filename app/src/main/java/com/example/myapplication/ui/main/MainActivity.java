@@ -33,25 +33,11 @@ public class MainActivity extends BaseActivity implements IMuseumClick {
     private MuseumAdapter museumAdapter;
     private final ArrayList<Museum> museums = new ArrayList<>();
     private MuseumRepository repository;
-    private boolean isAppReady = false;
-    private static boolean splashAlreadyShown = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        SplashScreen splashScreen = SplashScreen.installSplashScreen(this);
-
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        if (!splashAlreadyShown) {
-            splashScreen.setKeepOnScreenCondition(() -> !isAppReady);
-            new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                isAppReady = true;
-                splashAlreadyShown = true;
-            }, 2000);
-        } else {
-            isAppReady = true;
-        }
 
         repository = MuseumRepository.getInstance(this);
         setupToolBar();
