@@ -45,4 +45,7 @@
     <string name="cancel">Cancel</string>
     <string name="error">Error</string>
 
+    <string name="no_internet">No internet connection</string>
+    <string name="offline_cache">Offline mode: cached data</string>
+    <string name="cache_updated">Data updated</string>
 </resources>

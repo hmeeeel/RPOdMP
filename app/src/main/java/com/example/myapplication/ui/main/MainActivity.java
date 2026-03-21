@@ -16,6 +16,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.myapplication.data.network.NetworkMonitor;
 import com.example.myapplication.ui.add.AddMuseumActivity;
 import com.example.myapplication.ui.detail.IMuseumClick;
 import com.example.myapplication.ui.detail.MuseumDetailActivity;
@@ -26,6 +27,7 @@ import com.example.myapplication.data.model.Museum;
 import com.example.myapplication.data.repository.MuseumRepository;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +39,10 @@ public class MainActivity extends BaseActivity implements IMuseumClick {
     //private MuseumRepository repository;
 
     private MuseumViewModel viewModel;
+
+    private NetworkMonitor networkMonitor;
+    private Snackbar networkSnackbar;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,6 +56,8 @@ public class MainActivity extends BaseActivity implements IMuseumClick {
         setupRecyclerView();
         setupFAB();
         observeData();
+
+        setupNetworkMonitoring();
     }
 
     private void observeData() {
@@ -68,6 +76,25 @@ public class MainActivity extends BaseActivity implements IMuseumClick {
         });
     }
 
+    private void setupNetworkMonitoring() {
+        networkMonitor = new NetworkMonitor(this);
+
+        networkMonitor.observe(this, isOnline -> {
+            if (Boolean.FALSE.equals(isOnline)) {
+                networkSnackbar = Snackbar.make(
+                        findViewById(R.id.main),
+                        getString(R.string.no_internet),
+                        Snackbar.LENGTH_LONG
+                );
+              //  networkSnackbar.setAnchorView(R.id.menu_navigation);
+                networkSnackbar.show();
+            } else {
+                if (networkSnackbar != null) {
+                    networkSnackbar.dismiss();
+                }
+            }
+        });
+    }
     private void setupToolBar() {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
