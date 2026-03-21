@@ -18,7 +18,7 @@ public class SettingsActivity extends BaseActivity {
     private RadioGroup languageRadioGroup;
     private RadioButton radioRussian, radioEnglish;
     private SwitchCompat themeSwitch;
-    private boolean isInitialized = false;
+  //  private boolean isInitialized = false;
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
@@ -35,7 +35,7 @@ public class SettingsActivity extends BaseActivity {
 
         setupBottomNavigation();
 
-        isInitialized = true;
+      //  isInitialized = true;
     }
     private void setupToolbar() {
         Toolbar toolbar = findViewById(R.id.settingsToolbar);
@@ -84,7 +84,7 @@ public class SettingsActivity extends BaseActivity {
 
     private void setupListeners() {
         languageRadioGroup.setOnCheckedChangeListener((group, checkedId) -> {
-            if (!isInitialized) return;
+           // if (!isInitialized) return;
 
             String newLanguage;
             if (checkedId == R.id.radioRussian) {
@@ -100,7 +100,7 @@ public class SettingsActivity extends BaseActivity {
         });
 
         themeSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (!isInitialized) return;
+           // if (!isInitialized) return;
 
             String newTheme = isChecked ?
                     SettingsManager.THEME_DARK : SettingsManager.THEME_LIGHT;

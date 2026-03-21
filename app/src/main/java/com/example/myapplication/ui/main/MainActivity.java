@@ -12,6 +12,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -32,18 +33,38 @@ public class MainActivity extends BaseActivity implements IMuseumClick {
 
     private MuseumAdapter museumAdapter;
     private final ArrayList<Museum> museums = new ArrayList<>();
-    private MuseumRepository repository;
+    //private MuseumRepository repository;
+
+    private MuseumViewModel viewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        repository = MuseumRepository.getInstance(this);
+        viewModel = new ViewModelProvider(this).get(MuseumViewModel.class);
+
         setupToolBar();
         setupBottomNavigation();
         setupRecyclerView();
         setupFAB();
+        observeData();
+    }
+
+    private void observeData() {
+        viewModel.museums.observe(this, museumList -> {
+            museums.clear();
+            museums.addAll(museumList);
+            museumAdapter.notifyDataSetChanged();
+        });
+
+        viewModel.error.observe(this, errorMsg -> {
+            if (errorMsg != null) {
+                Toast.makeText(this,
+                        getString(R.string.error_load) + errorMsg,
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void setupToolBar() {
@@ -66,26 +87,6 @@ public class MainActivity extends BaseActivity implements IMuseumClick {
         fab.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, AddMuseumActivity.class);
             startActivity(intent);
-        });
-    }
-
-    private void loadMuseums() {
-        repository.getAllMuseums(new MuseumRepository.DataCallback<>() {
-            @Override
-            public void onSuccess(List<Museum> data) {
-                if (isDestroyed() || isFinishing()) return;
-                museums.clear();
-                museums.addAll(data);
-                museumAdapter.notifyDataSetChanged();
-            }
-
-            @Override
-            public void onError(Exception e) {
-                if (isDestroyed() || isFinishing()) return;
-                Toast.makeText(MainActivity.this,
-                        getString(R.string.error_load) + e.getMessage(),
-                        Toast.LENGTH_SHORT).show();
-            }
         });
     }
 
@@ -134,9 +135,10 @@ public class MainActivity extends BaseActivity implements IMuseumClick {
         intent.putExtra("museum", museum);
         startActivity(intent);
     }
+
     protected void onResume() {
         super.onResume();
-        loadMuseums();
+        viewModel.loadMuseums();
         BottomNavigationView bottomNav = findViewById(R.id.menu_navigation);
         bottomNav.setSelectedItemId(R.id.nav_home);
     }

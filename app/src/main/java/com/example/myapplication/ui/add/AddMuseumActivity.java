@@ -10,6 +10,7 @@ import android.widget.Toast;
 
 
 import androidx.appcompat.widget.Toolbar;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.example.myapplication.R;
 import com.example.myapplication.data.model.Museum;
@@ -29,19 +30,45 @@ public class AddMuseumActivity extends BaseActivity {
     private MuseumRepository repository;
     private Museum editingMuseum = null;
     private boolean isEditMode = false;
+    private AddMuseumViewModel viewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add);
 
-        repository = MuseumRepository.getInstance(this);
+       // repository = MuseumRepository.getInstance(this);
+        viewModel = new ViewModelProvider(this).get(AddMuseumViewModel.class);
 
         setupToolbar();
         initializeViews();
         checkEditMode();
+
+        observeViewModel();
     }
 
+    private void observeViewModel() {
+        viewModel.saved.observe(this, isSaved -> {
+            if (Boolean.TRUE.equals(isSaved)) {
+                Toast.makeText(this,
+                        isEditMode ? getString(R.string.museum_updated) : getString(R.string.museum_added),
+                        Toast.LENGTH_SHORT).show();
+                if (isEditMode) {
+                    Intent intent = new Intent(this, MuseumDetailActivity.class);
+                    intent.putExtra("museum", editingMuseum);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    startActivity(intent);
+                }
+                finish();
+            }
+        });
+
+        viewModel.error.observe(this, errorMsg -> {
+            if (errorMsg != null) {
+                Toast.makeText(this, getString(R.string.error_add) + errorMsg, Toast.LENGTH_LONG).show();
+            }
+        });
+    }
     private void setupToolbar() {
         Toolbar toolbar = findViewById(R.id.addEditToolbar);
         setSupportActionBar(toolbar);
@@ -116,52 +143,13 @@ public class AddMuseumActivity extends BaseActivity {
             editingMuseum.setDescriprion(description);
             editingMuseum.setPhone(phone);
             editingMuseum.setWebsite(website);
-
-            repository.updateMuseum(editingMuseum, new MuseumRepository.DataCallback<>() {
-                @Override
-                public void onSuccess(Void data) {
-                    Toast.makeText(AddMuseumActivity.this,
-                            getString(R.string.museum_updated), Toast.LENGTH_SHORT).show();
-
-                    Intent intent = new Intent(AddMuseumActivity.this, MuseumDetailActivity.class);
-                    intent.putExtra("museum", editingMuseum);
-                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                    startActivity(intent);
-                    finish();
-                }
-
-                @Override
-                public void onError(Exception e) {
-                    Toast.makeText(AddMuseumActivity.this,
-                            getString(R.string.error_add) + e.getMessage(),
-                            Toast.LENGTH_LONG).show();
-                }
-            });
+            viewModel.updateMuseum(editingMuseum); // ← всё, задача Activity выполнена
         } else {
             Museum newMuseum = new Museum(name, defaultImages, description, phone, website);
-
-            repository.insertMuseum(newMuseum, new MuseumRepository.DataCallback<Long>() {
-                @Override
-                public void onSuccess(Long id) {
-                    Toast.makeText(AddMuseumActivity.this,
-                            getString(R.string.museum_added), Toast.LENGTH_SHORT).show();
-
-                    // белый экран + сплеш
-                    // Intent intent = new Intent(AddMuseumActivity.this, MainActivity.class);
-                    // intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                    // startActivity(intent);
-
-                    finish();
-                }
-
-                @Override
-                public void onError(Exception e) {
-                    Toast.makeText(AddMuseumActivity.this,
-                            getString(R.string.error_add) + e.getMessage(),
-                            Toast.LENGTH_LONG).show();
-                }
-            });
+            viewModel.insertMuseum(newMuseum);     // ← всё, задача Activity выполнена
         }
+        // Что происходит дальше — Activity не знает и не должна знать
+        // Она узнает результат через observe() выше
     }
 
     @Override
