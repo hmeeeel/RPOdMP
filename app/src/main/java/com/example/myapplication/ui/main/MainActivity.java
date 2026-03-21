@@ -20,6 +20,7 @@ import com.example.myapplication.ui.add.AddMuseumActivity;
 import com.example.myapplication.ui.detail.IMuseumClick;
 import com.example.myapplication.ui.detail.MuseumDetailActivity;
 import com.example.myapplication.R;
+import com.example.myapplication.ui.map.MapActivity;
 import com.example.myapplication.ui.settings.SettingsActivity;
 import com.example.myapplication.data.model.Museum;
 import com.example.myapplication.data.repository.MuseumRepository;
@@ -98,7 +99,8 @@ public class MainActivity extends BaseActivity implements IMuseumClick {
             if (id == R.id.nav_home) {
                 return true;
             } else if (id == R.id.nav_map) {
-                Toast.makeText(this, getString(R.string.map), Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(MainActivity.this, MapActivity.class);
+                startActivity(intent);
                 return true;
             } else if (id == R.id.nav_favorites) {
                 Intent intent = new Intent(MainActivity.this, AddMuseumActivity.class);
