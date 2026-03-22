@@ -66,7 +66,7 @@ public class Place implements Parcelable {
         place.latitude = cached.getLatitude();
         place.longitude = cached.getLongitude();
         place.source = SOURCE_YANDEX;
-        place.isVisited = true;  //  всё что на карте = уже посещено
+        place.isVisited = false;  // true всё что на карте = уже посещено
         place.visitDate = System.currentTimeMillis();
         place.createdAt = System.currentTimeMillis();
         place.imageIds = new ArrayList<>();

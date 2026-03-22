@@ -10,6 +10,7 @@ import androidx.lifecycle.ViewModelProvider;
 import com.example.myapplication.R;
 import com.example.myapplication.ui.add.AddMuseumActivity;
 import com.example.myapplication.ui.main.BaseActivity;
+import com.example.myapplication.ui.main.MainActivity;
 import com.example.myapplication.ui.settings.SettingsActivity;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.snackbar.Snackbar;
@@ -153,7 +154,12 @@ public class MapActivity extends BaseActivity {
         bottomNav.setSelectedItemId(R.id.nav_map);
         bottomNav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
-            if (id == R.id.nav_home) { finish(); return true; }
+            if (id == R.id.nav_home) {
+                Intent intent = new Intent(this, MainActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                startActivity(intent);
+                return true;
+            }
             else if (id == R.id.nav_map) { return true; }
             else if (id == R.id.nav_favorites) {
                 startActivity(new Intent(this, AddMuseumActivity.class));

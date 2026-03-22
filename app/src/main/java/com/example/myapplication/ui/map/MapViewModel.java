@@ -57,7 +57,7 @@ public class MapViewModel extends AndroidViewModel {
         executor.execute(() -> {
 
             // посещённые места = маркер на карте. координаты есть И isVisited = true
-            List<Place> saved = db.placeDAO().getVisitedPlacesWithCoordinates();
+            List<Place> saved = db.placeDAO().getPlacesWithCoordinates(); // getVisitedPlacesWithCoordinates
 
             if (!saved.isEmpty()) {
                 mainHandler.post(() -> _markers.setValue(toMarkers(saved)));
@@ -96,7 +96,7 @@ public class MapViewModel extends AndroidViewModel {
                                             }
 
                                             List<Place> updated =
-                                                    db.placeDAO().getVisitedPlacesWithCoordinates();
+                                                    db.placeDAO().getPlacesWithCoordinates(); //getVisitedPlacesWithCoordinates
 
                                             mainHandler.post(() -> {
                                                 _markers.setValue(toMarkers(updated));

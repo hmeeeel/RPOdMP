@@ -54,7 +54,9 @@ public class SettingsActivity extends BaseActivity {
             int id = item.getItemId();
 
             if (id == R.id.nav_home) {
-                finish();
+                Intent intent = new Intent(this, MainActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                startActivity(intent);
                 return true;
             } else if (id == R.id.nav_map) {
                 startActivity(new Intent(this, MapActivity.class));
