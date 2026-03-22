@@ -48,4 +48,26 @@
     <string name="no_internet">No internet connection</string>
     <string name="offline_cache">Offline mode: cached data</string>
     <string name="cache_updated">Data updated</string>
+
+    <string name="status_visited">Visited</string>
+    <string name="status_planned">Want to visit</string>
+
+    <string name="address_label">Address:</string>
+    <string name="coordinates_label">Coordinates:</string>
+    <string name="working_hours_label">Working hours:</string>
+    <string name="visit_date_label">Visit date:</string>
+
+    <string name="rating_label">My rating</string>
+    <string name="pick_date">Pick date</string>
+    <string name="visit_status_label">Visit status</string>
+
+    <string name="latitude_label">Latitude</string>
+    <string name="longitude_label">Longitude</string>
+    <string name="latitude_hint">from −90 to 90</string>
+    <string name="longitude_hint">from −180 to 180</string>
+    <string name="error_latitude_required">Enter latitude</string>
+    <string name="error_longitude_required">Enter longitude</string>
+    <string name="error_invalid_number">Enter a valid number</string>
+    <string name="error_latitude_range">Latitude must be between −90 and 90</string>
+    <string name="error_longitude_range">Longitude must be between −180 and 180</string>
 </resources>

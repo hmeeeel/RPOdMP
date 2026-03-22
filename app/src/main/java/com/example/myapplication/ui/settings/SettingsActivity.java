@@ -12,6 +12,8 @@ import androidx.appcompat.widget.Toolbar;
 import com.example.myapplication.ui.add.AddMuseumActivity;
 import com.example.myapplication.ui.main.BaseActivity;
 import com.example.myapplication.R;
+import com.example.myapplication.ui.main.MainActivity;
+import com.example.myapplication.ui.map.MapActivity;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class SettingsActivity extends BaseActivity {
@@ -55,7 +57,7 @@ public class SettingsActivity extends BaseActivity {
                 finish();
                 return true;
             } else if (id == R.id.nav_map) {
-                Toast.makeText(this, getString(R.string.map), Toast.LENGTH_SHORT).show();
+                startActivity(new Intent(this, MapActivity.class));
                 return true;
             } else if (id == R.id.nav_favorites) {
                 Intent intent = new Intent(this, AddMuseumActivity.class);

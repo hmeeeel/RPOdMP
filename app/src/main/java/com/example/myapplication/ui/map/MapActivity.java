@@ -8,7 +8,6 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.myapplication.R;
-import com.example.myapplication.data.model.CachedPlace;
 import com.example.myapplication.ui.add.AddMuseumActivity;
 import com.example.myapplication.ui.main.BaseActivity;
 import com.example.myapplication.ui.settings.SettingsActivity;
@@ -18,7 +17,6 @@ import com.yandex.mapkit.MapKitFactory;
 import com.yandex.mapkit.geometry.Point;
 import com.yandex.mapkit.map.CameraPosition;
 import com.yandex.mapkit.map.MapObjectCollection;
-import com.yandex.mapkit.map.MapObjectTapListener;
 import com.yandex.mapkit.map.MapType;
 import com.yandex.mapkit.map.PlacemarkMapObject;
 import com.yandex.mapkit.mapview.MapView;
@@ -34,9 +32,11 @@ public class MapActivity extends BaseActivity {
     private MapView mapView;
     private MapViewModel viewModel;
     private MapObjectCollection markersCollection;
-    private ImageProvider markerIcon;
 
-    private MapObjectTapListener placemarkTapListener;
+    private ImageProvider iconVisited;
+    private ImageProvider iconPlanned;
+    private ImageProvider iconApiResult;
+
     private Snackbar networkSnackbar;
 
     @Override
@@ -47,10 +47,11 @@ public class MapActivity extends BaseActivity {
 
         mapView = findViewById(R.id.mapview);
         viewModel = new ViewModelProvider(this).get(MapViewModel.class);
-
         markersCollection = mapView.getMapWindow().getMap().getMapObjects().addCollection();
 
-        markerIcon = ImageProvider.fromResource(this, R.drawable.placeholder64);
+        iconVisited = ImageProvider.fromResource(this, R.drawable.placeholder32);
+        iconPlanned = ImageProvider.fromResource(this, R.drawable.place_want);
+        iconApiResult = ImageProvider.fromResource(this, R.drawable.place_cash);
 
         setupToolbar();
         setupBottomNavigation();
@@ -63,10 +64,6 @@ public class MapActivity extends BaseActivity {
         var map = mapView.getMapWindow().getMap();
         map.setMapType(MapType.VECTOR_MAP);
         map.setNightModeEnabled(settingsManager.isDarkTheme());
-
-        // zoom 12.0f — уровень города (17.0f — уровень улицы)
-        // azimuth 0.0f — север сверху
-        // tilt 0.0f — вид сверху без наклона
         map.move(new CameraPosition(
                 new Point(DEFAULT_LAT, DEFAULT_LON),
                 12.0f, 0.0f, 0.0f
@@ -74,20 +71,15 @@ public class MapActivity extends BaseActivity {
     }
 
     private void observeViewModel() {
-        viewModel.places.observe(this, this::updateMarkers);
+        viewModel.markers.observe(this, this::updateMarkers);
 
         viewModel.snackbarMessage.observe(this, key -> {
             if (key == null) return;
             String msg;
             switch (key) {
-                case "offline_cache":
-                    msg = getString(R.string.offline_cache); break;
-                case "cache_updated":
-                    msg = getString(R.string.cache_updated); break;
-                case "no_data":
-                    msg = getString(R.string.no_internet); break;
-                default:
-                    msg = key;
+                case "offline_cache": msg = getString(R.string.offline_cache); break;
+                case "cache_updated": msg = getString(R.string.cache_updated); break;
+                default: msg = getString(R.string.no_internet);
             }
             Snackbar.make(mapView, msg, Snackbar.LENGTH_SHORT).show();
         });
@@ -96,43 +88,44 @@ public class MapActivity extends BaseActivity {
     private void observeNetwork() {
         viewModel.networkMonitor.observe(this, isOnline -> {
             if (Boolean.FALSE.equals(isOnline)) {
-                // нет инета
                 networkSnackbar = Snackbar.make(
-                        mapView,
-                        getString(R.string.no_internet),
-                        Snackbar.LENGTH_INDEFINITE
-                );
+                        mapView, getString(R.string.no_internet), Snackbar.LENGTH_INDEFINITE);
                 networkSnackbar.setAnchorView(R.id.menu_navigation);
                 networkSnackbar.show();
                 viewModel.loadPlaces(DEFAULT_LAT, DEFAULT_LON, false);
-
             } else if (Boolean.TRUE.equals(isOnline)) {
-                // инет
                 if (networkSnackbar != null) networkSnackbar.dismiss();
                 viewModel.loadPlaces(DEFAULT_LAT, DEFAULT_LON, true);
             }
         });
     }
 
-    private void updateMarkers(List<CachedPlace> places) {
+    private void updateMarkers(List<MapMarker> markers) {
         markersCollection.clear();
 
-        for (CachedPlace place : places) {
-            if (place.getLatitude() == 0 && place.getLongitude() == 0) continue;
+        for (MapMarker marker : markers) {
+            if (marker.getLatitude() == 0 && marker.getLongitude() == 0) continue;
 
-            PlacemarkMapObject marker = markersCollection.addPlacemark();
-            marker.setGeometry(new Point(place.getLatitude(), place.getLongitude()));
-            marker.setIcon(markerIcon);
+            PlacemarkMapObject placemark = markersCollection.addPlacemark();
+            placemark.setGeometry(new Point(marker.getLatitude(), marker.getLongitude()));
 
-            placemarkTapListener = (mapObject, point) -> {
-                String info = place.getName()
-                        + (place.getAddress().isEmpty() ? "" : "\n" + place.getAddress())
-                        + (place.getWorkingHours().isEmpty() ? "" : "\n" + place.getWorkingHours());
-                Snackbar.make(mapView, info, Snackbar.LENGTH_LONG).show();
+            switch (marker.getMarkerType()) {
+                case SAVED_VISITED:
+                    placemark.setIcon(iconVisited);
+                    break;
+                case SAVED_PLANNED:
+                    placemark.setIcon(iconPlanned);
+                    break;
+                case API_RESULT:
+                default:
+                    placemark.setIcon(iconApiResult);
+                    break;
+            }
+
+            placemark.addTapListener((mapObject, point) -> {
+                Snackbar.make(mapView, marker.getSnackbarText(), Snackbar.LENGTH_LONG).show();
                 return true;
-            };
-
-            marker.addTapListener(placemarkTapListener);
+            });
         }
     }
 

@@ -1,31 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?android:attr/windowBackground"
-    tools:context=".ui.add.AddMuseumActivity">
+    android:background="?android:attr/windowBackground">
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/addEditToolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:gravity="center_vertical"
         android:background="?attr/colorPrimary"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
         app:navigationIcon="?attr/backIcon"
-        app:titleTextColor="?attr/iconColor" />
+        app:titleTextColor="?attr/iconColor"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"/>
 
     <ScrollView
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:fillViewport="true"
+        app:layout_constraintTop_toBottomOf="@id/addEditToolbar"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/addEditToolbar">
+        app:layout_constraintEnd_toEndOf="parent">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -39,32 +37,28 @@
                 android:layout_marginBottom="16dp"
                 android:hint="@string/museum_name"
                 app:boxBackgroundMode="outline">
-
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/editName"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="text"
                     android:maxLines="1"
-                    android:textColor="?android:attr/textColorPrimary" />
+                    android:textColor="?android:attr/textColorPrimary"/>
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:hint="@string/description"
+                android:hint="@string/address_label"
                 app:boxBackgroundMode="outline">
-
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/editDescription"
+                    android:id="@+id/editAddress"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="top|start"
-                    android:inputType="textMultiLine"
-                    android:lines="4"
-                    android:minLines="3"
-                    android:textColor="?android:attr/textColorPrimary" />
+                    android:inputType="text"
+                    android:maxLines="2"
+                    android:textColor="?android:attr/textColorPrimary"/>
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
@@ -73,14 +67,13 @@
                 android:layout_marginBottom="16dp"
                 android:hint="@string/phone_label"
                 app:boxBackgroundMode="outline">
-
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/editPhone"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="phone"
                     android:maxLines="1"
-                    android:textColor="?android:attr/textColorPrimary" />
+                    android:textColor="?android:attr/textColorPrimary"/>
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
@@ -89,23 +82,178 @@
                 android:layout_marginBottom="16dp"
                 android:hint="@string/website_label"
                 app:boxBackgroundMode="outline">
-
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/editWebsite"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="textUri"
                     android:maxLines="1"
-                    android:textColor="?android:attr/textColorPrimary" />
+                    android:textColor="?android:attr/textColorPrimary"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:hint="@string/working_hours_label"
+                app:boxBackgroundMode="outline">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/editWorkingHours"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="text"
+                    android:maxLines="1"
+                    android:textColor="?android:attr/textColorPrimary"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/layoutLatitude"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:hint="@string/latitude_label"
+                app:boxBackgroundMode="outline"
+                app:helperText="@string/latitude_hint"
+                app:helperTextEnabled="true">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/editLatitude"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="numberDecimal|numberSigned"
+                    android:maxLines="1"
+                    android:textColor="?android:attr/textColorPrimary"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/layoutLongitude"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:hint="@string/longitude_label"
+                app:boxBackgroundMode="outline"
+                app:helperText="@string/longitude_hint"
+                app:helperTextEnabled="true">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/editLongitude"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="numberDecimal|numberSigned"
+                    android:maxLines="1"
+                    android:textColor="?android:attr/textColorPrimary"/>
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginBottom="16dp"
+                android:background="?android:attr/textColorSecondary"
+                android:alpha="0.2"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/visit_status_label"
+                android:textColor="?android:attr/textColorSecondary"
+                android:textSize="13sp"
+                android:layout_marginBottom="8dp"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="16dp">
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switchVisited"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+
+                <TextView
+                    android:id="@+id/textVisitedLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:text="@string/status_planned"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:textSize="15sp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/visitDateBlock"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/textVisitDate"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/visit_date_label"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:textSize="15sp"/>
+
+                <Button
+                    android:id="@+id/btnPickDate"
+                    style="@style/Widget.AppCompat.Button.Borderless"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/pick_date"
+                    android:textColor="?attr/colorPrimary"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/ratingBlock"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/rating_label"
+                    android:textColor="?android:attr/textColorSecondary"
+                    android:textSize="13sp"
+                    android:layout_marginBottom="4dp"/>
+
+                <RatingBar
+                    android:id="@+id/ratingBar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:numStars="5"
+                    android:stepSize="1"
+                    android:rating="0"/>
+            </LinearLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:hint="@string/description"
+                app:boxBackgroundMode="outline">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/editDescription"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="top|start"
+                    android:inputType="textMultiLine"
+                    android:lines="4"
+                    android:minLines="3"
+                    android:textColor="?android:attr/textColorPrimary"/>
             </com.google.android.material.textfield.TextInputLayout>
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
                 android:text="@string/required_field"
                 android:textColor="?android:attr/textColorSecondary"
-                android:textSize="12sp" />
+                android:textSize="12sp"/>
 
         </LinearLayout>
     </ScrollView>

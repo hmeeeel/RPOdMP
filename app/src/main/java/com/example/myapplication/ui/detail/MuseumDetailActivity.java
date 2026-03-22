@@ -1,7 +1,6 @@
 package com.example.myapplication.ui.detail;
 
 import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
@@ -13,55 +12,111 @@ import android.widget.Toast;
 import androidx.appcompat.widget.Toolbar;
 import androidx.viewpager2.widget.ViewPager2;
 
+import com.example.myapplication.R;
+import com.example.myapplication.data.model.Place;
+import com.example.myapplication.data.repository.PlaceRepository;
 import com.example.myapplication.ui.add.AddMuseumActivity;
 import com.example.myapplication.ui.main.BaseActivity;
-import com.example.myapplication.R;
-import com.example.myapplication.data.model.Museum;
-import com.example.myapplication.data.repository.MuseumRepository;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Locale;
+
 
 public class MuseumDetailActivity extends BaseActivity {
-    private Museum museum;
-    private MuseumRepository repository;
 
+    private Place place;
+    private PlaceRepository repository;
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
 
-        repository = MuseumRepository.getInstance(this);
-
+        repository = PlaceRepository.getInstance(this);
         setupToolbar();
 
-        ViewPager2 slider = findViewById(R.id.detailSlider);
-        TextView name = findViewById(R.id.detailName);
-        TextView description = findViewById(R.id.detailDescription);
-        TextView phone = findViewById(R.id.detailPhone);
-        TextView website = findViewById(R.id.detailWebsite);
-
-        museum = getIntent().getParcelableExtra("museum");
-        if (museum == null) {
+        place = getIntent().getParcelableExtra("place");
+        if (place == null) {
             Toast.makeText(this, getString(R.string.error), Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
 
-        ImageSliderAdapter sliderAdapter = new ImageSliderAdapter(museum.getImageIds());
-        slider.setAdapter(sliderAdapter);
-        name.setText(museum.getName());
-        description.setText(museum.getDescriprion());
-        if (museum.getPhone() != null && !museum.getPhone().isEmpty()) {
-            phone.setVisibility(View.VISIBLE);
-            phone.setText(String.format("%s %s", getString(R.string.phone_label), museum.getPhone()));
+        bindViews();
+    }
+
+    private void bindViews() {
+        ViewPager2 slider = findViewById(R.id.detailSlider);
+        ArrayList<String> images = place.getImageIds();
+        if (images == null || images.isEmpty()) {
+            images = new ArrayList<>();
+            images.add("natioanal_hud_museum_1920x1280");
+        }
+        slider.setAdapter(new ImageSliderAdapter(images));
+
+        TextView name = findViewById(R.id.detailName);
+        name.setText(place.getName());
+
+        showOrHide(R.id.detailAddress,
+                place.getAddress(),
+                getString(R.string.address_label) + " " + place.getAddress());
+
+        if (place.hasCoordinates()) {
+            TextView coordView = findViewById(R.id.detailCoordinates);
+            coordView.setVisibility(View.VISIBLE);
+            coordView.setText(getString(R.string.coordinates_label) + " " + place.getCoordinatesDisplay());
         } else {
-            phone.setVisibility(View.GONE);
+            findViewById(R.id.detailCoordinates).setVisibility(View.GONE);
         }
 
-        if (museum.getWebsite() != null && !museum.getWebsite().isEmpty()) {
-            website.setVisibility(View.VISIBLE);
-            website.setText(String.format("%s %s", getString(R.string.website_label), museum.getWebsite()));
+        showOrHide(R.id.detailPhone,
+                place.getPhone(),
+                getString(R.string.phone_label) + " " + place.getPhone());
+
+        showOrHide(R.id.detailWebsite,
+                place.getWebsite(),
+                getString(R.string.website_label) + " " + place.getWebsite());
+
+        showOrHide(R.id.detailWorkingHours,
+                place.getWorkingHours(),
+                getString(R.string.working_hours_label) + " " + place.getWorkingHours());
+
+        TextView statusView = findViewById(R.id.detailStatus);
+        if (place.isVisited()) {
+            statusView.setText(R.string.status_visited);
+            statusView.setTextColor(getColor(android.R.color.holo_green_dark));
         } else {
-            website.setVisibility(View.GONE);
+            statusView.setText(R.string.status_planned);
+            statusView.setTextColor(getColor(android.R.color.darker_gray));
+        }
+
+        TextView visitDateView = findViewById(R.id.detailVisitDate);
+        if (place.isVisited() && place.getVisitDate() > 0) {
+            visitDateView.setVisibility(View.VISIBLE);
+            String dateStr = new SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
+                    .format(new Date(place.getVisitDate()));
+            visitDateView.setText(getString(R.string.visit_date_label) + " " + dateStr);
+        } else {
+            visitDateView.setVisibility(View.GONE);
+        }
+
+        showOrHide(R.id.detailDescription,
+                place.getDescription(),
+                place.getDescription());
+    }
+
+    private void showOrHide(int viewId, String value, String text) {
+        TextView view = findViewById(viewId);
+        if (value != null && !value.isEmpty()) {
+            view.setVisibility(View.VISIBLE);
+            view.setText(text);
+        } else {
+            view.setVisibility(View.GONE);
         }
     }
+
     private void setupToolbar() {
         Toolbar toolbar = findViewById(R.id.detailToolbar);
         setSupportActionBar(toolbar);
@@ -70,48 +125,50 @@ public class MuseumDetailActivity extends BaseActivity {
             getSupportActionBar().setDisplayShowTitleEnabled(false);
         }
     }
+
+    @Override
     public boolean onSupportNavigateUp() {
         finish();
         return true;
     }
 
+    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.detail_menu, menu);
         return true;
     }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-
         if (id == R.id.action_edit) {
-            editMuseum();
+            editPlace();
             return true;
         } else if (id == R.id.action_delete) {
             showDeleteConfirmation();
             return true;
         }
-
         return super.onOptionsItemSelected(item);
     }
-    private void editMuseum() {
+
+    private void editPlace() {
         Intent intent = new Intent(this, AddMuseumActivity.class);
-        intent.putExtra("museum", museum);
+        intent.putExtra("place", place); // ИЗМЕНЕНО: ключ "place"
         startActivity(intent);
         finish();
     }
+
     private void showDeleteConfirmation() {
         new AlertDialog.Builder(this)
                 .setTitle(getString(R.string.delete_dialog))
-                .setMessage(getString(R.string.delete_dialog_message, museum.getName()))
-                .setPositiveButton(getString(R.string.delete), new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        deleteMuseum();
-                    }
-                })
+                .setMessage(getString(R.string.delete_dialog_message, place.getName()))
+                .setPositiveButton(getString(R.string.delete), (dialog, which) -> deletePlace())
                 .setNegativeButton(getString(R.string.cancel), null)
                 .show();
     }
-    private void deleteMuseum() {
-        repository.deleteMuseum(museum, new MuseumRepository.DataCallback<>() {
+
+    private void deletePlace() {
+        repository.deletePlace(place, new PlaceRepository.DataCallback<Void>() {
             @Override
             public void onSuccess(Void data) {
                 Toast.makeText(MuseumDetailActivity.this,

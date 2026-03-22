@@ -47,4 +47,27 @@
     <string name="no_internet">Нет подключения к интернету</string>
     <string name="offline_cache">Офлайн-режим: данные из кеша</string>
     <string name="cache_updated">Данные обновлены</string>
+
+    <string name="status_visited">Посещено</string>
+    <string name="status_planned">Хочу посетить</string>
+
+    <string name="address_label">Адрес:</string>
+    <string name="coordinates_label">Координаты:</string>
+    <string name="working_hours_label">Часы работы:</string>
+    <string name="visit_date_label">Дата посещения:</string>
+
+    <string name="rating_label">Моя оценка</string>
+    <string name="pick_date">Выбрать дату</string>
+    <string name="visit_status_label">Статус посещения</string>
+
+    <string name="latitude_label">Широта</string>
+    <string name="longitude_label">Долгота</string>
+    <string name="latitude_hint">от −90 до 90</string>
+    <string name="longitude_hint">от −180 до 180</string>
+    <string name="error_latitude_required">Введите широту</string>
+    <string name="error_longitude_required">Введите долготу</string>
+    <string name="error_invalid_number">Введите корректное число</string>
+    <string name="error_latitude_range">Широта должна быть от −90 до 90</string>
+    <string name="error_longitude_range">Долгота должна быть от −180 до 180</string>
+
 </resources>

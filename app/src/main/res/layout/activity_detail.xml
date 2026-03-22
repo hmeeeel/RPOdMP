@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -11,12 +13,11 @@
         android:id="@+id/detailToolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:gravity="center_vertical"
         android:background="?attr/colorPrimary"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
         app:navigationIcon="?attr/backIcon"
-        app:titleTextColor="?attr/iconColor" />
+        app:titleTextColor="?attr/iconColor"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <ScrollView
         android:layout_width="0dp"
@@ -32,6 +33,7 @@
             android:orientation="vertical"
             android:padding="16dp">
 
+            <!-- Слайдер фото -->
             <androidx.viewpager2.widget.ViewPager2
                 android:id="@+id/detailSlider"
                 android:layout_width="match_parent"
@@ -48,34 +50,97 @@
                 android:textIsSelectable="true" />
 
             <TextView
-                android:id="@+id/detailDescription"
+                android:id="@+id/detailAddress"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:textColor="?android:attr/textColorPrimary"
-                android:textSize="16sp"
-                android:textIsSelectable="true"/>
+                android:layout_marginTop="8dp"
+                android:drawablePadding="8dp"
+                android:textColor="?android:attr/textColorSecondary"
+                android:textSize="15sp"
+                android:textIsSelectable="true"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/detailCoordinates"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textColor="?android:attr/textColorSecondary"
+                android:textSize="13sp"
+                android:fontFamily="monospace"
+                android:visibility="gone" />
 
             <TextView
                 android:id="@+id/detailPhone"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="8dp"
                 android:textColor="?android:attr/textColorPrimary"
                 android:textSize="16sp"
-                android:textIsSelectable="true"/>
+                android:textIsSelectable="true"
+                android:visibility="gone" />
 
             <TextView
                 android:id="@+id/detailWebsite"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="4dp"
                 android:textColor="#0000FF"
                 android:textSize="16sp"
-                android:textIsSelectable="true"/>
+                android:textIsSelectable="true"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/detailWorkingHours"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textColor="?android:attr/textColorSecondary"
+                android:textSize="14sp"
+                android:textIsSelectable="true"
+                android:visibility="gone" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="8dp"
+                android:background="?android:attr/textColorSecondary"
+                android:alpha="0.3" />
+
+            <TextView
+                android:id="@+id/detailStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:background="@drawable/badge_background" />
+
+            <TextView
+                android:id="@+id/detailVisitDate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:textColor="?android:attr/textColorPrimary"
+                android:textSize="15sp"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/detailDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:textColor="?android:attr/textColorPrimary"
+                android:textSize="16sp"
+                android:textIsSelectable="true"
+                android:visibility="gone" />
 
         </LinearLayout>
-
     </ScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

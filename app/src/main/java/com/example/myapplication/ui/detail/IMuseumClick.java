@@ -1,7 +1,7 @@
 package com.example.myapplication.ui.detail;
 
-import com.example.myapplication.data.model.Museum;
+import com.example.myapplication.data.model.Place;
 
 public interface IMuseumClick {
-    void onMuseumClick(Museum museum);
+    void onMuseumClick(Place place);
 }
