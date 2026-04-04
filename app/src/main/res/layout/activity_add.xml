@@ -29,14 +29,15 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="24dp">
+            android:padding="24dp"
+            android:theme="@style/TextInputTheme">
 
             <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:hint="@string/museum_name"
-                app:boxBackgroundMode="outline">
+                android:hint="@string/museum_name">
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/editName"
                     android:layout_width="match_parent"
@@ -47,11 +48,11 @@
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:hint="@string/address_label"
-                app:boxBackgroundMode="outline">
+                android:hint="@string/address_label">
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/editAddress"
                     android:layout_width="match_parent"
@@ -62,11 +63,11 @@
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:hint="@string/phone_label"
-                app:boxBackgroundMode="outline">
+                android:hint="@string/phone_label">
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/editPhone"
                     android:layout_width="match_parent"
@@ -77,11 +78,11 @@
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:hint="@string/website_label"
-                app:boxBackgroundMode="outline">
+                android:hint="@string/website_label">
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/editWebsite"
                     android:layout_width="match_parent"
@@ -92,11 +93,11 @@
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:hint="@string/working_hours_label"
-                app:boxBackgroundMode="outline">
+                android:hint="@string/working_hours_label">
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/editWorkingHours"
                     android:layout_width="match_parent"
@@ -108,11 +109,11 @@
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/layoutLatitude"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
                 android:hint="@string/latitude_label"
-                app:boxBackgroundMode="outline"
                 app:helperText="@string/latitude_hint"
                 app:helperTextEnabled="true">
                 <com.google.android.material.textfield.TextInputEditText
@@ -126,11 +127,11 @@
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/layoutLongitude"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
                 android:hint="@string/longitude_label"
-                app:boxBackgroundMode="outline"
                 app:helperText="@string/longitude_hint"
                 app:helperTextEnabled="true">
                 <com.google.android.material.textfield.TextInputEditText
@@ -199,7 +200,7 @@
 
                 <Button
                     android:id="@+id/btnPickDate"
-                    style="@style/Widget.AppCompat.Button.Borderless"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/pick_date"
@@ -228,15 +229,16 @@
                     android:layout_height="wrap_content"
                     android:numStars="5"
                     android:stepSize="1"
-                    android:rating="0"/>
+                    android:rating="0"
+                    android:progressTint="?attr/colorPrimary"/>
             </LinearLayout>
 
             <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:hint="@string/description"
-                app:boxBackgroundMode="outline">
+                android:hint="@string/description">
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/editDescription"
                     android:layout_width="match_parent"

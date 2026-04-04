@@ -70,4 +70,14 @@
     <string name="error_latitude_range">Широта должна быть от −90 до 90</string>
     <string name="error_longitude_range">Долгота должна быть от −180 до 180</string>
 
+    <string name="search_hint">Поиск музеев…</string>
+    <string name="sort_newest">Новые</string>
+    <string name="sort_oldest">Старые</string>
+    <string name="sort_az">А→Я</string>
+    <string name="sort_za">Я→А</string>
+    <string name="filter_all">Все</string>
+    <string name="filter_visited">Посещено</string>
+    <string name="filter_planned">Хочу посетить</string>
+
+    <string name="empty_search">Ничего не найдено</string>
 </resources>

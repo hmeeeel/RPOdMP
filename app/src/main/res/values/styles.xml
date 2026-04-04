@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="AppTheme_Light" parent="Theme.AppCompat.Light.NoActionBar">
+    <style name="AppTheme_Light" parent="Theme.MaterialComponents.Light.NoActionBar">
         <item name="colorPrimary">@color/primary_light</item>
         <item name="android:windowBackground">@color/light</item>
         <item name="android:textColorPrimary">@color/text_light</item>
@@ -10,10 +10,11 @@
         <item name="android:windowLightStatusBar">true</item>
         <item name="iconColor">@color/dark</item>
         <item name="backIcon">@drawable/ic_back_24dp</item>
-
+        <item name="colorPrimaryVariant">@color/textColorPrimary_light</item>
+        <item name="colorSecondaryVariant">@color/input_inactive_light</item>
     </style>
 
-    <style name="AppTheme_Dark" parent="Theme.AppCompat.NoActionBar">
+    <style name="AppTheme_Dark" parent="Theme.MaterialComponents.NoActionBar">
         <item name="colorPrimary">@color/primary_dark</item>
         <item name="android:windowBackground">@color/dark</item>
         <item name="android:textColorPrimary">@color/text_dark</item>
@@ -23,5 +24,21 @@
         <item name="android:windowLightStatusBar">false</item>
         <item name="iconColor">@color/light</item>
         <item name="backIcon">@drawable/ic_back_white_24dp</item>
+        <item name="colorPrimaryVariant">@color/textColorPrimary_dark</item>
+        <item name="colorSecondaryVariant">@color/input_inactive_dark</item>
+    </style>
+
+    <style name="TextInputTheme" parent="">
+        <item name="colorPrimary">?attr/colorPrimaryVariant</item>
+        <item name="colorControlNormal">?attr/colorSecondaryVariant</item>
+    </style>
+
+    <style name="ToolbarSearchViewTheme" parent="">
+        <!-- Цвет вводимого текста -->
+        <item name="android:editTextColor">?android:attr/textColorPrimary</item>
+        <!-- Цвет текста подсказки ("Поиск...") -->
+        <item name="android:textColorHint">?android:attr/textColorSecondary</item>
+        <!-- Цвет крестика очистки текста и курсора -->
+        <item name="colorControlNormal">?attr/iconColor</item>
     </style>
 </resources>

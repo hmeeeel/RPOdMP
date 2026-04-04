@@ -6,7 +6,13 @@
     <color name="text_light_2">#666666</color>
     <color name="border_light">#E0E0E0</color>
 
-    <color name="primary_dark">#1E1E1E</color>
+    <color name="textColorPrimary_light">#2f3030</color>
+    <color name="input_inactive_light">#B0B0B0</color>
+
+    <color name="textColorPrimary_dark">#E3EAE7</color>
+    <color name="input_inactive_dark">#E3EAE7</color>
+
+    <color name="primary_dark">#1e1e1e</color>
     <color name="dark">#121212</color>
     <color name="elevated_dark">#252525</color>
     <color name="text_dark">#FFFFFF</color>
