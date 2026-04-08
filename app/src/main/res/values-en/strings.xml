@@ -82,4 +82,29 @@
 
     <string name="empty_search">Nothing found</string>
 
+    <string name="notification_section">NOTIFICATIONS</string>
+    <string name="notification_enable">Weekly reminder</string>
+    <string name="notification_pick_day">Choose day of week</string>
+    <string name="notification_day_label">Day:</string>
+    <string name="notification_time_label">Time:</string>
+    <string name="notification_title">Museums are waiting!</string>
+    <string name="notification_text">Time to plan a cultural visit this week.</string>
+    <string name="notification_channel_name">Reminders</string>
+    <string name="notification_permission_denied">Notification permission denied. Enable it in system settings.</string>
+
+    <string-array name="days_of_week">
+        <item>Monday</item>
+        <item>Tuesday</item>
+        <item>Wednesday</item>
+        <item>Thursday</item>
+        <item>Friday</item>
+        <item>Saturday</item>
+        <item>Sunday</item>
+    </string-array>
+
+    <plurals name="notification_text">
+        <item quantity="one">You have %d museum on your list — time to visit!</item>
+        <item quantity="other">You have %d museums on your list — time to visit!</item>
+    </plurals>
+
 </resources>

@@ -58,4 +58,6 @@ dependencies {
     implementation("androidx.core:core-splashscreen:1.0.1")
 
     implementation("com.yandex.android:maps.mobile:4.33.1-full")
+
+    implementation("androidx.work:work-runtime:2.9.1")
 }

@@ -1,6 +1,12 @@
 package com.example.myapplication.ui.map;
 
+import static androidx.core.content.ContextCompat.startActivity;
+
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.os.Bundle;
 import android.widget.Toast;
 
@@ -17,12 +23,15 @@ import com.google.android.material.snackbar.Snackbar;
 import com.yandex.mapkit.MapKitFactory;
 import com.yandex.mapkit.geometry.Point;
 import com.yandex.mapkit.map.CameraPosition;
+import com.yandex.mapkit.map.ClusterizedPlacemarkCollection;
 import com.yandex.mapkit.map.MapObjectCollection;
+import com.yandex.mapkit.map.MapObjectTapListener;
 import com.yandex.mapkit.map.MapType;
 import com.yandex.mapkit.map.PlacemarkMapObject;
 import com.yandex.mapkit.mapview.MapView;
 import com.yandex.runtime.image.ImageProvider;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class MapActivity extends BaseActivity {
@@ -33,12 +42,14 @@ public class MapActivity extends BaseActivity {
     private MapView mapView;
     private MapViewModel viewModel;
     private MapObjectCollection markersCollection;
+   // private ClusterizedPlacemarkCollection markersCollection;
 
     private ImageProvider iconVisited;
     private ImageProvider iconPlanned;
     private ImageProvider iconApiResult;
 
     private Snackbar networkSnackbar;
+    private final List<MapObjectTapListener> tapListeners = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,8 +59,7 @@ public class MapActivity extends BaseActivity {
 
         mapView = findViewById(R.id.mapview);
         viewModel = new ViewModelProvider(this).get(MapViewModel.class);
-        markersCollection = mapView.getMapWindow().getMap().getMapObjects().addCollection();
-
+       markersCollection = mapView.getMapWindow().getMap().getMapObjects().addCollection();
         iconVisited = ImageProvider.fromResource(this, R.drawable.placeholder32);
         iconPlanned = ImageProvider.fromResource(this, R.drawable.place_want);
         iconApiResult = ImageProvider.fromResource(this, R.drawable.place_cash);
@@ -103,6 +113,7 @@ public class MapActivity extends BaseActivity {
 
     private void updateMarkers(List<MapMarker> markers) {
         markersCollection.clear();
+        tapListeners.clear(); // оч старые сильные ссылки
 
         for (MapMarker marker : markers) {
             if (marker.getLatitude() == 0 && marker.getLongitude() == 0) continue;
@@ -123,10 +134,13 @@ public class MapActivity extends BaseActivity {
                     break;
             }
 
-            placemark.addTapListener((mapObject, point) -> {
+            //сохр сильную ссылку
+            MapObjectTapListener listener = (mapObject, point) -> {
                 Snackbar.make(mapView, marker.getSnackbarText(), Snackbar.LENGTH_LONG).show();
                 return true;
-            });
+            };
+            tapListeners.add(listener);
+            placemark.addTapListener(listener);
         }
     }
 

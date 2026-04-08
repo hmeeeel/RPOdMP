@@ -80,4 +80,30 @@
     <string name="filter_planned">Хочу посетить</string>
 
     <string name="empty_search">Ничего не найдено</string>
+
+    <string name="notification_section">УВЕДОМЛЕНИЯ</string>
+    <string name="notification_enable">Еженедельное напоминание</string>
+    <string name="notification_pick_day">Выберите день недели</string>
+    <string name="notification_day_label">День:</string>
+    <string name="notification_time_label">Время:</string>
+    <string name="notification_title">Музеи ждут вас!</string>
+    <string name="notification_text">Самое время спланировать культурный поход на этой неделе.</string>
+    <string name="notification_channel_name">Напоминания</string>
+    <string name="notification_permission_denied">Разрешение на уведомления не предоставлено. Включите его в настройках системы.</string>
+    <string-array name="days_of_week">
+        <item>Понедельник</item>
+        <item>Вторник</item>
+        <item>Среда</item>
+        <item>Четверг</item>
+        <item>Пятница</item>
+        <item>Суббота</item>
+        <item>Воскресенье</item>
+    </string-array>
+
+    <plurals name="notification_text">
+        <item quantity="one">У вас %d музей в списке — пора сходить!</item>
+        <item quantity="few">У вас %d музея в списке — пора сходить!</item>
+        <item quantity="many">У вас %d музеев в списке — пора сходить!</item>
+        <item quantity="other">У вас %d музеев в списке — пора сходить!</item>
+    </plurals>
 </resources>
