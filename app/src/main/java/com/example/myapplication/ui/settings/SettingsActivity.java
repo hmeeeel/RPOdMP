@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.widget.Button;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
@@ -167,7 +168,7 @@ public class SettingsActivity extends BaseActivity {
         int currentDay    = settingsManager.getNotificationDayOfWeek();
         int currentIndex  = dayOfWeekToIndex(currentDay);
 
-        new AlertDialog.Builder(this)
+        AlertDialog d = new AlertDialog.Builder(this)
                 .setTitle(getString(R.string.notification_pick_day))
                 .setSingleChoiceItems(dayNames, currentIndex, (dialog, which) -> {
                     int selectedDay = DAY_OF_WEEK_VALUES[which];
@@ -178,18 +179,45 @@ public class SettingsActivity extends BaseActivity {
                 })
                 .setNegativeButton(getString(R.string.cancel), null)
                 .show();
+
+        Button negativeButton = d.getButton(AlertDialog.BUTTON_NEGATIVE);
+        if (negativeButton != null) {
+            int color = settingsManager.isDarkTheme() ?
+                    ContextCompat.getColor(this, R.color.light) :
+                    ContextCompat.getColor(this, R.color.dark);
+            negativeButton.setTextColor(color);
+        }
     }
 
     private void showTimePicker() {
         int hour   = settingsManager.getNotificationHour();
         int minute = settingsManager.getNotificationMinute();
 
-        new TimePickerDialog(this, (view, selectedHour, selectedMinute) -> {
-            settingsManager.setNotificationHour(selectedHour);
-            settingsManager.setNotificationMinute(selectedMinute);
-            updateTimeLabel(selectedHour, selectedMinute);
-            rescheduleIfEnabled();
-        }, hour, minute, true).show();
+        TimePickerDialog dialog = new TimePickerDialog(this,
+                (view, selectedHour, selectedMinute) -> {
+                    settingsManager.setNotificationHour(selectedHour);
+                    settingsManager.setNotificationMinute(selectedMinute);
+                    updateTimeLabel(selectedHour, selectedMinute);
+                    rescheduleIfEnabled();
+                }, hour, minute, true);
+
+        dialog.show();
+
+        Button positiveButton = dialog.getButton(TimePickerDialog.BUTTON_POSITIVE);
+        if (positiveButton != null) {
+            int color = settingsManager.isDarkTheme() ?
+                    ContextCompat.getColor(this, R.color.light) :
+                    ContextCompat.getColor(this, R.color.dark);
+            positiveButton.setTextColor(color);
+        }
+
+        Button negativeButton = dialog.getButton(TimePickerDialog.BUTTON_NEGATIVE);
+        if (negativeButton != null) {
+            int color = settingsManager.isDarkTheme() ?
+                    ContextCompat.getColor(this, R.color.light) :
+                    ContextCompat.getColor(this, R.color.dark);
+            negativeButton.setTextColor(color);
+        }
     }
 
     private void rescheduleIfEnabled() {

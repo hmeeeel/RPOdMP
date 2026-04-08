@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -33,7 +32,6 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Слайдер фото -->
             <androidx.viewpager2.widget.ViewPager2
                 android:id="@+id/detailSlider"
                 android:layout_width="match_parent"
@@ -45,7 +43,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:textColor="?android:attr/textColorPrimary"
-                android:textSize="24sp"
+                android:textSize="22sp"
                 android:textStyle="bold"
                 android:textIsSelectable="true" />
 
@@ -53,7 +51,7 @@
                 android:id="@+id/detailAddress"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="10dp"
                 android:drawablePadding="8dp"
                 android:textColor="?android:attr/textColorSecondary"
                 android:textSize="15sp"
@@ -64,19 +62,19 @@
                 android:id="@+id/detailCoordinates"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:textColor="?android:attr/textColorSecondary"
-                android:textSize="13sp"
+                android:layout_marginTop="6dp"
                 android:fontFamily="monospace"
+                android:textColor="?android:attr/textColorSecondary"
+                android:textSize="15sp"
                 android:visibility="gone" />
 
             <TextView
                 android:id="@+id/detailPhone"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="6dp"
                 android:textColor="?android:attr/textColorPrimary"
-                android:textSize="16sp"
+                android:textSize="15sp"
                 android:textIsSelectable="true"
                 android:visibility="gone" />
 
@@ -84,9 +82,9 @@
                 android:id="@+id/detailWebsite"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="6dp"
                 android:textColor="#0000FF"
-                android:textSize="16sp"
+                android:textSize="15sp"
                 android:textIsSelectable="true"
                 android:visibility="gone" />
 
@@ -94,9 +92,9 @@
                 android:id="@+id/detailWorkingHours"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="6dp"
                 android:textColor="?android:attr/textColorSecondary"
-                android:textSize="14sp"
+                android:textSize="15sp"
                 android:textIsSelectable="true"
                 android:visibility="gone" />
 
@@ -125,7 +123,7 @@
                 android:id="@+id/detailVisitDate"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="6dp"
                 android:textColor="?android:attr/textColorPrimary"
                 android:textSize="15sp"
                 android:visibility="gone" />
@@ -136,7 +134,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:textColor="?android:attr/textColorPrimary"
-                android:textSize="16sp"
+                android:textSize="15sp"
                 android:textIsSelectable="true"
                 android:visibility="gone" />
 

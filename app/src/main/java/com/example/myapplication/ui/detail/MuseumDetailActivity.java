@@ -6,10 +6,12 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.ContextCompat;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.example.myapplication.R;
@@ -159,12 +161,30 @@ public class MuseumDetailActivity extends BaseActivity {
     }
 
     private void showDeleteConfirmation() {
-        new AlertDialog.Builder(this)
+        AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle(getString(R.string.delete_dialog))
                 .setMessage(getString(R.string.delete_dialog_message, place.getName()))
-                .setPositiveButton(getString(R.string.delete), (dialog, which) -> deletePlace())
+                .setPositiveButton(getString(R.string.delete), (d, which) -> deletePlace())
                 .setNegativeButton(getString(R.string.cancel), null)
-                .show();
+                .create();
+
+        dialog.show();
+
+        Button positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+        if (positiveButton != null) {
+            int color = settingsManager.isDarkTheme() ?
+                    ContextCompat.getColor(this, R.color.light) :
+                    ContextCompat.getColor(this, R.color.dark);
+            positiveButton.setTextColor(color);
+        }
+
+        Button negativeButton = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
+        if (negativeButton != null) {
+            int color = settingsManager.isDarkTheme() ?
+                    ContextCompat.getColor(this, R.color.light) :
+                    ContextCompat.getColor(this, R.color.dark);
+            negativeButton.setTextColor(color);
+        }
     }
 
     private void deletePlace() {
