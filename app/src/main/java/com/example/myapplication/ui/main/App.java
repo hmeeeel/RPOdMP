@@ -9,8 +9,14 @@ import com.example.myapplication.data.repository.PlaceRepository;
 import com.example.myapplication.ui.notification.NotificationScheduler;
 import com.example.myapplication.ui.notification.NotificationWorker;
 import com.example.myapplication.ui.settings.SettingsManager;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.yandex.mapkit.MapKitFactory;
 import com.example.myapplication.BuildConfig;
+
+import java.util.HashMap;
+import java.util.Map;
+
 public class App extends Application {
 
     @Override
@@ -21,6 +27,15 @@ public class App extends Application {
 
         createNotificationChannel();
         restoreNotificationSchedule();
+
+        FirebaseApp.initializeApp(this);
+        Map<String, Object> testData = new HashMap<>();
+        testData.put("name", "test_connection");
+
+        FirebaseFirestore.getInstance()
+                .collection("test")
+                .document()
+                .set(testData);
     }
 
     @Override

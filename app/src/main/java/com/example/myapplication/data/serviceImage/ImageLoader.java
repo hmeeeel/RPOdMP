@@ -27,7 +27,7 @@ public class ImageLoader {
                         .load(resId)
                         .placeholder(R.drawable.bg_minsk_light)
                         .error(R.drawable.no_photo)
-                        .diskCacheStrategy(DiskCacheStrategy.NONE)
+                       // .diskCacheStrategy(DiskCacheStrategy.NONE)
                         .into(imageView);
             } else {
                 loadDefaultImage(context, imageView);
@@ -42,7 +42,7 @@ public class ImageLoader {
                         .load(imageFile)
                         .placeholder(R.drawable.bg_minsk_light)
                         .error(R.drawable.no_photo)
-                        .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                       // .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
                         .into(imageView);
             } else {
                 loadDefaultImage(context, imageView);
@@ -61,7 +61,7 @@ public class ImageLoader {
                             .load(imageFile)
                             .placeholder(R.drawable.bg_minsk_light)
                             .error(R.drawable.no_photo)
-                            .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                          //  .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
                             .into(imageView);
                     return;
                 }

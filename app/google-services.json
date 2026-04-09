@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "762744369757",
+    "project_id": "rpodmp-380c8",
+    "storage_bucket": "rpodmp-380c8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:762744369757:android:135fb5fb0c642bfe8f13b4",
+        "android_client_info": {
+          "package_name": "com.example.myapplication"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDOofUwLMCZa7Xq-UF41N62NKs5fX0_fYI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
