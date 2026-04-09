@@ -5,37 +5,44 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.os.Build;
 
+import com.example.myapplication.data.firestore.AnonymousPathProvider;
+import com.example.myapplication.data.firestore.FirestoreRepository;
 import com.example.myapplication.data.repository.PlaceRepository;
 import com.example.myapplication.ui.notification.NotificationScheduler;
 import com.example.myapplication.ui.notification.NotificationWorker;
 import com.example.myapplication.ui.settings.SettingsManager;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.yandex.mapkit.MapKitFactory;
 import com.example.myapplication.BuildConfig;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class App extends Application {
 
     @Override
     public void onCreate() {
         super.onCreate();
+
+        // 1. Яндекс карты
         MapKitFactory.setApiKey(BuildConfig.MAPKIT_API_KEY);
+
+        // 2. Firebase
+        FirebaseApp.initializeApp(this);
+
+        // 3. Офлайн-персистентность Firestore
+        FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
+                .setPersistenceEnabled(true)
+                .build();
+        FirebaseFirestore.getInstance().setFirestoreSettings(settings);
+
+        // 4. Инициализация FirestoreRepository
+        FirestoreRepository.getInstance(new AnonymousPathProvider());
+
+        // Room оставлен для карты и кэша
         PlaceRepository.getInstance(this);
 
         createNotificationChannel();
         restoreNotificationSchedule();
-
-        FirebaseApp.initializeApp(this);
-        Map<String, Object> testData = new HashMap<>();
-        testData.put("name", "test_connection");
-
-        FirebaseFirestore.getInstance()
-                .collection("test")
-                .document()
-                .set(testData);
     }
 
     @Override
@@ -50,7 +57,6 @@ public class App extends Application {
             int importance = NotificationManager.IMPORTANCE_DEFAULT;
             NotificationChannel channel =
                     new NotificationChannel(NotificationWorker.CHANNEL_ID, name, importance);
-
             NotificationManager manager = getSystemService(NotificationManager.class);
             if (manager != null) {
                 manager.createNotificationChannel(channel);

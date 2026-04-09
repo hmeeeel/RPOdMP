@@ -10,6 +10,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.myapplication.data.db.MuseumDB;
+import com.example.myapplication.data.firestore.FirestoreRepository;
 import com.example.myapplication.data.model.CachedPlace;
 import com.example.myapplication.data.model.Place;
 import com.example.myapplication.data.network.NetworkMonitor;
@@ -27,47 +28,48 @@ public class MapViewModel extends AndroidViewModel {
     private static final long MAX_CACHE_AGE_MS = 30L * 24 * 60 * 60 * 1000L;// 30 дней
 
     private final YandexSearchRepository searchRepository;
-    private final PlaceRepository placeRepository;
-    private final MuseumDB db;
-    private final ExecutorService executor;
-    private final Handler mainHandler;
+    private final PlaceRepository        placeRepository;
+    private final FirestoreRepository    firestoreRepository;
+    private final MuseumDB               db;
+    private final ExecutorService        executor;
+    private final Handler                mainHandler;
 
     public final NetworkMonitor networkMonitor;
 
-    private final MutableLiveData<List<MapMarker>> _markers = new MutableLiveData<>();
-    private final MutableLiveData<Boolean> _isLoading = new MutableLiveData<>(false);
-    private final MutableLiveData<String> _snackbarMessage = new MutableLiveData<>();
+    private final MutableLiveData<List<MapMarker>> _markers         = new MutableLiveData<>();
+    private final MutableLiveData<Boolean>         _isLoading       = new MutableLiveData<>(false);
+    private final MutableLiveData<String>          _snackbarMessage = new MutableLiveData<>();
 
-    public final LiveData<List<MapMarker>> markers = _markers;
-    public final LiveData<Boolean> isLoading = _isLoading;
-    public final LiveData<String> snackbarMessage = _snackbarMessage;
+    public final LiveData<List<MapMarker>> markers         = _markers;
+    public final LiveData<Boolean>         isLoading       = _isLoading;
+    public final LiveData<String>          snackbarMessage = _snackbarMessage;
 
     public MapViewModel(@NonNull Application application) {
         super(application);
-        searchRepository = YandexSearchRepository.getInstance();
-        placeRepository = PlaceRepository.getInstance(application);
-        db = MuseumDB.getInstance(application);
-        executor = Executors.newSingleThreadExecutor();
-        mainHandler = new Handler(Looper.getMainLooper());
-        networkMonitor = new NetworkMonitor(application);
+        searchRepository     = YandexSearchRepository.getInstance();
+        placeRepository      = PlaceRepository.getInstance(application);
+        firestoreRepository  = FirestoreRepository.getInstance();
+        db                   = MuseumDB.getInstance(application);
+        executor             = Executors.newSingleThreadExecutor();
+        mainHandler          = new Handler(Looper.getMainLooper());
+        networkMonitor       = new NetworkMonitor(application);
     }
 
     public void loadPlaces(double lat, double lon, boolean isOnline) {
         _isLoading.setValue(true);
         executor.execute(() -> {
 
-            // посещённые места = маркер на карте. координаты есть И isVisited = true
-            List<Place> saved = db.placeDAO().getPlacesWithCoordinates(); // getVisitedPlacesWithCoordinates
-
+            // Места с координатами из Room - маркеры на карту
+            List<Place> saved = db.placeDAO().getPlacesWithCoordinates();
             if (!saved.isEmpty()) {
                 mainHandler.post(() -> _markers.setValue(toMarkers(saved)));
             }
 
+            // Чистим устаревший кэш
             long expiryTime = System.currentTimeMillis() - MAX_CACHE_AGE_MS;
             db.cachedPlaceDAO().deleteExpiredCache(expiryTime);
 
-            long lastUpdate = db.cachedPlaceDAO()
-                    .getLastUpdateTime(YandexSearchRepository.SEARCH_QUERY);
+            long lastUpdate   = db.cachedPlaceDAO().getLastUpdateTime(YandexSearchRepository.SEARCH_QUERY);
             boolean isCacheStale = (System.currentTimeMillis() - lastUpdate) > CACHE_TTL_MS;
 
             if (isOnline && (isCacheStale || saved.isEmpty())) {
@@ -77,26 +79,32 @@ public class MapViewModel extends AndroidViewModel {
                                     @Override
                                     public void onSuccess(List<CachedPlace> fresh) {
                                         executor.execute(() -> {
+                                            // Обновляем кэш Яндекс API
                                             db.cachedPlaceDAO().deleteByQuery(
                                                     YandexSearchRepository.SEARCH_QUERY);
                                             db.cachedPlaceDAO().insertAll(fresh);
 
+                                            // Фильтруем: только места которых ещё нет в Room
                                             List<Place> newPlaces = new ArrayList<>();
                                             for (CachedPlace cached : fresh) {
-                                                boolean alreadyExists =
-                                                        db.placeDAO().countByCoordinates(
-                                                                cached.getLatitude(),
-                                                                cached.getLongitude()) > 0;
-                                                if (!alreadyExists) {
+                                                boolean exists = db.placeDAO().countByCoordinates(
+                                                        cached.getLatitude(),
+                                                        cached.getLongitude()) > 0;
+                                                if (!exists) {
                                                     newPlaces.add(Place.fromCachedPlace(cached));
                                                 }
                                             }
+
                                             if (!newPlaces.isEmpty()) {
+                                                // 1. Сохраняем в Room (для карты — без изменений)
                                                 db.placeDAO().insertAll(newPlaces);
+
+                                                // 2. Сохраняем в Firestore (для главного экрана)
+                                                saveNewPlacesToFirestore(newPlaces);
                                             }
 
                                             List<Place> updated =
-                                                    db.placeDAO().getPlacesWithCoordinates(); //getVisitedPlacesWithCoordinates
+                                                    db.placeDAO().getPlacesWithCoordinates();
 
                                             mainHandler.post(() -> {
                                                 _markers.setValue(toMarkers(updated));
@@ -119,13 +127,28 @@ public class MapViewModel extends AndroidViewModel {
             } else if (!isOnline) {
                 mainHandler.post(() -> {
                     _isLoading.setValue(false);
-                    _snackbarMessage.setValue(
-                            saved.isEmpty() ? "no_data" : "offline_cache");
+                    _snackbarMessage.setValue(saved.isEmpty() ? "no_data" : "offline_cache");
                 });
             } else {
                 mainHandler.post(() -> _isLoading.setValue(false));
             }
         });
+    }
+
+    private void saveNewPlacesToFirestore(List<Place> places) {
+        for (Place place : places) {
+            firestoreRepository.insert(place, new PlaceRepository.DataCallback<String>() {
+                @Override
+                public void onSuccess(String firestoreId) {
+                    // firestoreId установлен в place.setFirestoreId() внутри insert()
+                }
+
+                @Override
+                public void onError(Exception e) {
+                    // Ошибка Firestore не влияет на карту — Room уже записан
+                }
+            });
+        }
     }
 
     private List<MapMarker> toMarkers(List<Place> places) {

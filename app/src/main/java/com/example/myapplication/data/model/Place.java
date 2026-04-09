@@ -4,6 +4,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import androidx.room.Entity;
+import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 import androidx.room.TypeConverters;
 
@@ -39,6 +40,10 @@ public class Place implements Parcelable {
     private boolean isVisited;
     private String source;
     private long createdAt;
+
+ // ID документа в Firestore. Передаётся между Activity через Parcel
+    @Ignore // не хранится в Room, живёт только в памяти
+    private String firestoreId;
 
     public Place() {}
 
@@ -128,6 +133,10 @@ public class Place implements Parcelable {
     public long getCreatedAt() { return createdAt; }
     public void setCreatedAt(long createdAt) { this.createdAt = createdAt; }
 
+    //Firestore document ID. Не хранится в Room
+    public String getFirestoreId() { return firestoreId; }
+    public void setFirestoreId(String firestoreId) { this.firestoreId = firestoreId; }
+
     protected Place(Parcel in) {
         id = in.readInt();
         name = in.readString();
@@ -146,6 +155,7 @@ public class Place implements Parcelable {
         isVisited = in.readByte() != 0; // byte: 1 = true, 0 = false
         source = in.readString();
         createdAt = in.readLong();
+        firestoreId = in.readString(); // передаётся между Activity
     }
 
     @Override
@@ -166,6 +176,7 @@ public class Place implements Parcelable {
         dest.writeByte((byte) (isVisited ? 1 : 0));
         dest.writeString(source);
         dest.writeLong(createdAt);
+        dest.writeString(firestoreId);
     }
 
     @Override

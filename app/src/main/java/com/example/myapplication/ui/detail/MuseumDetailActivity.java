@@ -15,6 +15,7 @@ import androidx.core.content.ContextCompat;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.example.myapplication.R;
+import com.example.myapplication.data.firestore.FirestoreRepository;
 import com.example.myapplication.data.model.Place;
 import com.example.myapplication.data.repository.PlaceRepository;
 import com.example.myapplication.ui.add.AddMuseumActivity;
@@ -25,18 +26,18 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
-
 public class MuseumDetailActivity extends BaseActivity {
 
     private Place place;
-    private PlaceRepository repository;
+    private FirestoreRepository repository;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
 
-        repository = PlaceRepository.getInstance(this);
+       // repository = PlaceRepository.getInstance(this);
+        repository = FirestoreRepository.getInstance();
         setupToolbar();
 
         place = getIntent().getParcelableExtra("place");
@@ -104,9 +105,7 @@ public class MuseumDetailActivity extends BaseActivity {
             visitDateView.setVisibility(View.GONE);
         }
 
-        showOrHide(R.id.detailDescription,
-                place.getDescription(),
-                place.getDescription());
+        showOrHide(R.id.detailDescription, place.getDescription(), place.getDescription());
     }
 
     private void showOrHide(int viewId, String value, String text) {
@@ -155,7 +154,7 @@ public class MuseumDetailActivity extends BaseActivity {
 
     private void editPlace() {
         Intent intent = new Intent(this, AddMuseumActivity.class);
-        intent.putExtra("place", place); // ИЗМЕНЕНО: ключ "place"
+        intent.putExtra("place", place);
         startActivity(intent);
         finish();
     }
@@ -188,7 +187,7 @@ public class MuseumDetailActivity extends BaseActivity {
     }
 
     private void deletePlace() {
-        repository.deletePlace(place, new PlaceRepository.DataCallback<Void>() {
+        repository.delete(place.getFirestoreId(), new PlaceRepository.DataCallback<Void>() {
             @Override
             public void onSuccess(Void data) {
                 Toast.makeText(MuseumDetailActivity.this,
