@@ -5,9 +5,12 @@ import android.os.Handler;
 import android.os.Looper;
 
 import androidx.sqlite.db.SimpleSQLiteQuery;
+
 import com.example.myapplication.data.db.MuseumDB;
 import com.example.myapplication.data.db.PlaceDAO;
 import com.example.myapplication.data.model.Place;
+import com.example.myapplication.data.serviceImage.ImageStorageService;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,11 +23,13 @@ public class PlaceRepository {
     private final PlaceDAO placeDAO;
     private final ExecutorService executorService;
     private final Handler mainHandler;
+    private final Context context;
 
     private static volatile PlaceRepository instance;
 
     private PlaceRepository(Context context) {
-        MuseumDB db = MuseumDB.getInstance(context);
+        this.context = context.getApplicationContext();
+        MuseumDB db = MuseumDB.getInstance(this.context);
         placeDAO = db.placeDAO();
         executorService = Executors.newSingleThreadExecutor();
         mainHandler = new Handler(Looper.getMainLooper());
@@ -118,6 +123,9 @@ public class PlaceRepository {
     public void deletePlace(Place place, DataCallback<Void> callback) {
         executorService.execute(() -> {
             try {
+                ImageStorageService imageService = new ImageStorageService(context);
+                imageService.deleteImages(place.getImageIds());
+
                 placeDAO.deletePlace(place);
                 mainHandler.post(() -> callback.onSuccess(null));
             } catch (Exception e) {

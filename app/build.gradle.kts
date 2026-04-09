@@ -60,4 +60,7 @@ dependencies {
     implementation("com.yandex.android:maps.mobile:4.33.1-full")
 
     implementation("androidx.work:work-runtime:2.9.1")
+
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+    annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
 }

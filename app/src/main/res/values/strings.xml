@@ -106,4 +106,9 @@
         <item quantity="many">У вас %d музеев в списке — пора сходить!</item>
         <item quantity="other">У вас %d музеев в списке — пора сходить!</item>
     </plurals>
+
+    <string name="add_images">Добавить фото</string>
+    <string name="remove_image">Удалить фото</string>
+    <string name="preview_image">Превью изображения</string>
+    <string name="error_saving_image">Ошибка сохранения изображения</string>
 </resources>

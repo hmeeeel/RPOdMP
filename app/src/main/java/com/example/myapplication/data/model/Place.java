@@ -53,7 +53,7 @@ public class Place implements Parcelable {
         place.isVisited = false;
         place.createdAt = System.currentTimeMillis();
         place.imageIds = new ArrayList<>();
-        place.imageIds.add("natioanal_hud_museum_1920x1280");
+        place.imageIds.add("no_image");
         return place;
     }
 

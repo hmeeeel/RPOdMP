@@ -37,12 +37,12 @@ public class MuseumAdapter extends RecyclerView.Adapter<MuseumAdapter.ViewHolder
         return new ViewHolder(view);
     }
 
+
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Place place = places.get(position);
 
         holder.name.setText(place.getName());
-
         if (place.isVisited()) {
             holder.statusBadge.setText(R.string.status_visited);
             holder.statusBadge.setTextColor(
@@ -63,13 +63,17 @@ public class MuseumAdapter extends RecyclerView.Adapter<MuseumAdapter.ViewHolder
         List<String> images = place.getImageIds();
         if (images == null || images.isEmpty()) {
             images = new ArrayList<>();
-            images.add("natioanal_hud_museum_1920x1280");
+            images.add("no_image");
         }
 
         List<String> finalImages = images;
-        ImageSliderAdapter sliderAdapter = new ImageSliderAdapter(finalImages, () -> {
-            if (click != null) click.onMuseumClick(place);
-        });
+        ImageSliderAdapter sliderAdapter = new ImageSliderAdapter(
+                holder.itemView.getContext(),
+                finalImages,
+                () -> {
+                    if (click != null) click.onMuseumClick(place);
+                }
+        );
         holder.museumImage.setAdapter(sliderAdapter);
 
         holder.name.setOnClickListener(v -> {

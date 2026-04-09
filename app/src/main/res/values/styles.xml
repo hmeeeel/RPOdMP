@@ -34,11 +34,8 @@
     </style>
 
     <style name="ToolbarSearchViewTheme" parent="">
-        <!-- Цвет вводимого текста -->
         <item name="android:editTextColor">?android:attr/textColorPrimary</item>
-        <!-- Цвет текста подсказки ("Поиск...") -->
         <item name="android:textColorHint">?android:attr/textColorSecondary</item>
-        <!-- Цвет крестика очистки текста и курсора -->
         <item name="colorControlNormal">?attr/iconColor</item>
     </style>
 </resources>

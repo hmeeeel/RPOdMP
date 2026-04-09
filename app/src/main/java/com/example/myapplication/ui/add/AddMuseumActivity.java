@@ -2,6 +2,7 @@ package com.example.myapplication.ui.add;
 
 import android.app.DatePickerDialog;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.Menu;
@@ -14,42 +15,44 @@ import android.widget.Toast;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.myapplication.R;
 import com.example.myapplication.data.model.Place;
+
+import com.example.myapplication.data.serviceImage.IImageSelectionListener;
+import com.example.myapplication.data.serviceImage.ImagePickerHelper;
+import com.example.myapplication.data.serviceImage.ImagePreviewAdapter;
+import com.example.myapplication.data.serviceImage.ImageStorageService;
 import com.example.myapplication.ui.detail.MuseumDetailActivity;
 import com.example.myapplication.ui.main.BaseActivity;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 import java.util.Locale;
 
-public class AddMuseumActivity extends BaseActivity {
-
-    // Основные поля
-    private TextInputEditText editName;
-    private TextInputEditText editAddress;
-    private TextInputEditText editPhone;
-    private TextInputEditText editWebsite;
-    private TextInputEditText editWorkingHours;
-    private TextInputEditText editDescription;
-
-    private TextInputEditText editLatitude;
-    private TextInputEditText editLongitude;
-    private TextInputLayout   layoutLatitude;
-    private TextInputLayout   layoutLongitude;
-
+public class AddMuseumActivity extends BaseActivity implements IImageSelectionListener {
+    private TextInputEditText editName, editAddress, editPhone, editWebsite, editWorkingHours;
+    private TextInputEditText editDescription, editLatitude, editLongitude;
+    private TextInputLayout   layoutLatitude, layoutLongitude;
     private SwitchCompat switchVisited;
-    private TextView     textVisitedLabel;
-    private View         visitDateBlock;
-    private View         ratingBlock;
-    private TextView     textVisitDate;
+    private TextView     textVisitedLabel, textVisitDate;
+    private View         visitDateBlock, ratingBlock;
     private RatingBar    ratingBar;
+    private RecyclerView imageRecyclerView;
+    private ImagePreviewAdapter imagePreviewAdapter;
+    private ArrayList<String> selectedImageFileNames = new ArrayList<>();
+    private MaterialButton btnAddImages;
+    private ImagePickerHelper imagePickerHelper;
+    private ImageStorageService imageStorageService;
 
     private long selectedVisitDate = 0;
-
     private Place editingPlace = null;
     private boolean isEditMode = false;
     private AddMuseumViewModel viewModel;
@@ -60,9 +63,12 @@ public class AddMuseumActivity extends BaseActivity {
         setContentView(R.layout.activity_add);
 
         viewModel = new ViewModelProvider(this).get(AddMuseumViewModel.class);
+        imageStorageService = new ImageStorageService(this);
+        imagePickerHelper = new ImagePickerHelper(this, this);
 
         setupToolbar();
         initViews();
+        setupImageRecyclerView();
         setupSwitchListener();
         setupDatePicker();
         checkEditMode();
@@ -88,6 +94,61 @@ public class AddMuseumActivity extends BaseActivity {
         ratingBlock      = findViewById(R.id.ratingBlock);
         textVisitDate    = findViewById(R.id.textVisitDate);
         ratingBar        = findViewById(R.id.ratingBar);
+
+        imageRecyclerView = findViewById(R.id.imageRecyclerView);
+        btnAddImages = findViewById(R.id.btnAddImages);
+
+        btnAddImages.setOnClickListener(v -> imagePickerHelper.pickImages());
+    }
+
+    private void setupImageRecyclerView() {
+        imagePreviewAdapter = new ImagePreviewAdapter(
+                this,
+                selectedImageFileNames,
+                this::removeImage
+        );
+
+        imageRecyclerView.setLayoutManager(
+                new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        );
+        imageRecyclerView.setAdapter(imagePreviewAdapter);
+    }
+
+    @Override
+    public void onImagesSelected(List<Uri> imageUris) {
+        for (Uri uri : imageUris) {
+            String fileName = imageStorageService.saveImageToInternalStorage(uri);
+            if (fileName != null) {
+                selectedImageFileNames.add(fileName);
+            } else {
+                Toast.makeText(this, getString(R.string.error_saving_image), Toast.LENGTH_SHORT).show();
+            }
+        }
+        imagePreviewAdapter.notifyDataSetChanged();
+        updateImageVisibility();
+    }
+
+    @Override
+    public void onImageSelectionError(String error) {
+        Toast.makeText(this, error, Toast.LENGTH_SHORT).show();
+    }
+
+    private void removeImage(int position) {
+        if (position >= 0 && position < selectedImageFileNames.size()) {
+            String fileName = selectedImageFileNames.get(position);
+            imageStorageService.deleteImage(fileName);
+            selectedImageFileNames.remove(position);
+            imagePreviewAdapter.notifyItemRemoved(position);
+            updateImageVisibility();
+        }
+    }
+
+    private void updateImageVisibility() {
+        if (selectedImageFileNames.isEmpty()) {
+            imageRecyclerView.setVisibility(View.GONE);
+        } else {
+            imageRecyclerView.setVisibility(View.VISIBLE);
+        }
     }
 
     private void setupSwitchListener() {
@@ -162,6 +223,13 @@ public class AddMuseumActivity extends BaseActivity {
         }
 
         ratingBar.setRating(place.getRating());
+
+        if (place.getImageIds() != null && !place.getImageIds().isEmpty()) {
+            selectedImageFileNames.clear();
+            selectedImageFileNames.addAll(place.getImageIds());
+            imagePreviewAdapter.notifyDataSetChanged();
+            updateImageVisibility();
+        }
     }
 
     private void observeViewModel() {
@@ -254,7 +322,21 @@ public class AddMuseumActivity extends BaseActivity {
         boolean isVisited   = switchVisited.isChecked();
         float rating        = ratingBar.getRating();
 
+        // Если изображений нет, добавляем дефолтное
+       /* if (selectedImageFileNames.isEmpty()) {
+            selectedImageFileNames.add("natioanal_hud_museum_1920x1280");
+        }
+*/
         if (isEditMode && editingPlace != null) {
+            ArrayList<String> oldImages = editingPlace.getImageIds();
+            if (oldImages != null) {
+                for (String oldImage : oldImages) {
+                    if (!selectedImageFileNames.contains(oldImage)) {
+                        imageStorageService.deleteImage(oldImage);
+                    }
+                }
+            }
+
             editingPlace.setName(name);
             editingPlace.setAddress(address);
             editingPlace.setPhone(phone);
@@ -266,6 +348,14 @@ public class AddMuseumActivity extends BaseActivity {
             editingPlace.setVisited(isVisited);
             editingPlace.setRating(rating);
             editingPlace.setVisitDate(isVisited ? selectedVisitDate : 0);
+           // editingPlace.setImageIds(new ArrayList<>(selectedImageFileNames));
+
+            editingPlace.setImageIds(
+                    selectedImageFileNames.isEmpty()
+                            ? new ArrayList<>()
+                            : new ArrayList<>(selectedImageFileNames)
+            );
+
             viewModel.updatePlace(editingPlace);
         } else {
             Place newPlace = Place.createManual(name, description, phone, website);
@@ -276,6 +366,12 @@ public class AddMuseumActivity extends BaseActivity {
             newPlace.setVisited(isVisited);
             newPlace.setRating(rating);
             newPlace.setVisitDate(isVisited ? selectedVisitDate : 0);
+          //  newPlace.setImageIds(new ArrayList<>(selectedImageFileNames));
+            newPlace.setImageIds(
+                    selectedImageFileNames.isEmpty()
+                            ? new ArrayList<>()
+                            : new ArrayList<>(selectedImageFileNames)
+            );
             viewModel.insertPlace(newPlace);
         }
     }
@@ -307,5 +403,18 @@ public class AddMuseumActivity extends BaseActivity {
     public boolean onSupportNavigateUp() {
         finish();
         return true;
+    }
+
+
+   @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (!isEditMode && !Boolean.TRUE.equals(viewModel.saved.getValue())) {
+            for (String fileName : selectedImageFileNames) {
+                if (fileName.startsWith("img_")) {
+                    imageStorageService.deleteImage(fileName);
+                }
+            }
+        }
     }
 }

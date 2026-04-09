@@ -10,21 +10,26 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.myapplication.R;
+import com.example.myapplication.data.serviceImage.ImageLoader;
+import com.example.myapplication.data.serviceImage.ImageStorageService;
+
 
 import java.util.List;
 
 public class ImageSliderAdapter extends RecyclerView.Adapter<ImageSliderAdapter.SliderViewHolder> {
-    private final List<String> imageIds;
-    private final IImageClick click;
 
-    public ImageSliderAdapter(List<String> imageIds) {
-        this.imageIds = imageIds;
-        this.click = null;
+    private final List<String> imageFileNames;
+    private final IImageClick clickListener;
+    private final ImageStorageService imageService;
+
+    public ImageSliderAdapter(Context context, List<String> imageFileNames) {
+        this(context, imageFileNames, null);
     }
 
-    public ImageSliderAdapter(List<String> imageIds, IImageClick clickListener) {
-        this.imageIds = imageIds;
-        this.click = clickListener;
+    public ImageSliderAdapter(Context context, List<String> imageFileNames, IImageClick clickListener) {
+        this.imageFileNames = imageFileNames;
+        this.clickListener = clickListener;
+        this.imageService = new ImageStorageService(context);
     }
 
     @NonNull
@@ -37,29 +42,26 @@ public class ImageSliderAdapter extends RecyclerView.Adapter<ImageSliderAdapter.
 
     @Override
     public void onBindViewHolder(SliderViewHolder holder, int position) {
-        String imageName = imageIds.get(position);
+        String fileName = imageFileNames.get(position);
         Context context = holder.imageView.getContext();
 
-        int resId = context.getResources().getIdentifier(
-                imageName, "drawable", context.getPackageName()
-        );
-
-        if (resId != 0) {
-            holder.imageView.setImageResource(resId);
-        } else {
-            holder.imageView.setImageResource(R.drawable.natioanal_hud_museum_1920x1280);
+        String imagePath = imageService.getImagePath(fileName);
+        if (imagePath == null) {
+            imagePath = fileName;
         }
 
+        ImageLoader.loadImage(context, imagePath, holder.imageView);
+
         holder.imageView.setOnClickListener(v -> {
-            if (click != null) {
-                click.onImageClick();
+            if (clickListener != null) {
+                clickListener.onImageClick();
             }
         });
     }
 
     @Override
     public int getItemCount() {
-        return imageIds.size();
+        return imageFileNames.size();
     }
 
     public static class SliderViewHolder extends RecyclerView.ViewHolder {

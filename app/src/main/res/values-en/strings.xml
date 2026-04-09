@@ -107,4 +107,8 @@
         <item quantity="other">You have %d museums on your list — time to visit!</item>
     </plurals>
 
+    <string name="add_images">Add a photo</string>
+    <string name="remove_image">Delete photo</string>
+    <string name="preview_image">Image preview</string>
+    <string name="error_saving_image">Error saving image</string>
 </resources>

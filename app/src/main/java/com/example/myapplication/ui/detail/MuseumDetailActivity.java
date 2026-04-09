@@ -54,9 +54,9 @@ public class MuseumDetailActivity extends BaseActivity {
         ArrayList<String> images = place.getImageIds();
         if (images == null || images.isEmpty()) {
             images = new ArrayList<>();
-            images.add("natioanal_hud_museum_1920x1280");
+            images.add("no_image");
         }
-        slider.setAdapter(new ImageSliderAdapter(images));
+        slider.setAdapter(new ImageSliderAdapter(this, images));
 
         TextView name = findViewById(R.id.detailName);
         name.setText(place.getName());
