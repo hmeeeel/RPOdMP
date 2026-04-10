@@ -57,19 +57,56 @@ public class MapViewModel extends AndroidViewModel {
 
     public void loadPlaces(double lat, double lon, boolean isOnline) {
         _isLoading.setValue(true);
-        executor.execute(() -> {
 
-            // Места с координатами из Room - маркеры на карту
+        if (isOnline) {
+            // сначала синхронизируем ручные места из Firestore в Room
+            syncFirestoreToRoom(lat, lon);
+        } else {
+            loadFromRoomAndYandex(lat, lon, false);
+        }
+    }
+
+    private void syncFirestoreToRoom(double lat, double lon) {
+        firestoreRepository.getAll(new PlaceRepository.DataCallback<List<Place>>() {
+            @Override
+            public void onSuccess(List<Place> firestorePlaces) {
+                executor.execute(() -> {
+                    for (Place place : firestorePlaces) {
+                        String fid = place.getFirestoreId();
+                        if (fid == null || fid.isEmpty()) continue;
+
+                        Place existing = db.placeDAO().findByFirestoreId(fid);
+                        if (existing != null) {
+                            // Обновляем если данные изменились
+                            place.setId(existing.getId());
+                            db.placeDAO().updatePlace(place);
+                        } else if (place.hasCoordinates()) {
+                            // Новое место с координатами - добавляем на карту
+                            db.placeDAO().insertPlace(place);
+                        }
+                    }
+                    mainHandler.post(() -> loadFromRoomAndYandex(lat, lon, true));
+                });
+            }
+            @Override
+            public void onError(Exception e) {
+                loadFromRoomAndYandex(lat, lon, true);
+            }
+        });
+    }
+
+    private void loadFromRoomAndYandex(double lat, double lon, boolean isOnline) {
+        executor.execute(() -> {
             List<Place> saved = db.placeDAO().getPlacesWithCoordinates();
             if (!saved.isEmpty()) {
                 mainHandler.post(() -> _markers.setValue(toMarkers(saved)));
             }
 
-            // Чистим устаревший кэш
             long expiryTime = System.currentTimeMillis() - MAX_CACHE_AGE_MS;
             db.cachedPlaceDAO().deleteExpiredCache(expiryTime);
 
-            long lastUpdate   = db.cachedPlaceDAO().getLastUpdateTime(YandexSearchRepository.SEARCH_QUERY);
+            // время посл обновления кеша и выч то сколько времени прошло и сравн с лим
+            long lastUpdate  = db.cachedPlaceDAO().getLastUpdateTime(YandexSearchRepository.SEARCH_QUERY);
             boolean isCacheStale = (System.currentTimeMillis() - lastUpdate) > CACHE_TTL_MS;
 
             if (isOnline && (isCacheStale || saved.isEmpty())) {
@@ -79,33 +116,24 @@ public class MapViewModel extends AndroidViewModel {
                                     @Override
                                     public void onSuccess(List<CachedPlace> fresh) {
                                         executor.execute(() -> {
-                                            // Обновляем кэш Яндекс API
-                                            db.cachedPlaceDAO().deleteByQuery(
-                                                    YandexSearchRepository.SEARCH_QUERY);
+                                            // Обновляем кэш Яндекс API и сохр дан
+                                            db.cachedPlaceDAO().deleteByQuery(YandexSearchRepository.SEARCH_QUERY);
                                             db.cachedPlaceDAO().insertAll(fresh);
-
-                                            // Фильтруем: только места которых ещё нет в Room
+                                            // есть ли новые?
                                             List<Place> newPlaces = new ArrayList<>();
                                             for (CachedPlace cached : fresh) {
                                                 boolean exists = db.placeDAO().countByCoordinates(
-                                                        cached.getLatitude(),
-                                                        cached.getLongitude()) > 0;
-                                                if (!exists) {
-                                                    newPlaces.add(Place.fromCachedPlace(cached));
-                                                }
+                                                        cached.getLatitude(), cached.getLongitude()) > 0;
+                                                if (!exists) newPlaces.add(Place.fromCachedPlace(cached));
                                             }
-
+                                            // + нов места
                                             if (!newPlaces.isEmpty()) {
-                                                // 1. Сохраняем в Room (для карты — без изменений)
                                                 db.placeDAO().insertAll(newPlaces);
-
-                                                // 2. Сохраняем в Firestore (для главного экрана)
                                                 saveNewPlacesToFirestore(newPlaces);
                                             }
 
-                                            List<Place> updated =
-                                                    db.placeDAO().getPlacesWithCoordinates();
-
+                                            // для карты
+                                            List<Place> updated = db.placeDAO().getPlacesWithCoordinates();
                                             mainHandler.post(() -> {
                                                 _markers.setValue(toMarkers(updated));
                                                 _isLoading.setValue(false);
@@ -113,13 +141,11 @@ public class MapViewModel extends AndroidViewModel {
                                             });
                                         });
                                     }
-
                                     @Override
                                     public void onError(String errorMsg) {
                                         mainHandler.post(() -> {
                                             _isLoading.setValue(false);
-                                            _snackbarMessage.setValue(
-                                                    saved.isEmpty() ? "no_data" : "offline_cache");
+                                            _snackbarMessage.setValue(saved.isEmpty() ? "no_data" : "offline_cache");
                                         });
                                     }
                                 })

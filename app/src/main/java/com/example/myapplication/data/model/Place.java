@@ -42,7 +42,7 @@ public class Place implements Parcelable {
     private long createdAt;
 
  // ID документа в Firestore. Передаётся между Activity через Parcel
-    @Ignore // не хранится в Room, живёт только в памяти
+   // @Ignore // не хранится в Room, живёт только в памяти
     private String firestoreId;
 
     public Place() {}

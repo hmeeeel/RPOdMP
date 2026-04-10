@@ -93,12 +93,12 @@ public class MuseumViewModel extends AndroidViewModel {
             public void onSuccess(List<Place> data) {
                 List<Place> result = applyFilterSortSearch(data);
                 _isLoading.setValue(false);
-                _places.setValue(result);
+                _places.setValue(result);// передача livedata
             }
 
             @Override
             public void onError(Exception e) {
-                _isLoading.setValue(false);
+                _isLoading.setValue(false);c
                 _error.setValue(e.getMessage());
             }
         });

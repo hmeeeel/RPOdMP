@@ -263,4 +263,29 @@ public class PlaceRepository {
     private int min(int n1, int n2, int n3) {
         return Math.min(Math.min(n1, n2), n3);
     }
+
+    //  из Firestore в Room
+    public void upsertFromFirestore(Place place, DataCallback<Void> callback) {
+        executorService.execute(() -> {
+            try {
+                String fid = place.getFirestoreId();
+                if (fid != null && !fid.isEmpty()) {
+                    Place existing = placeDAO.findByFirestoreId(fid);
+                    if (existing != null) {
+                        // Запись уже есть - сохраняем Room-id и обновляем
+                        place.setId(existing.getId());
+                        placeDAO.updatePlace(place);
+                    } else {
+                        placeDAO.insertPlace(place);//новая
+                    }
+                } else {
+                    placeDAO.insertPlace(place);
+                }
+                mainHandler.post(() -> callback.onSuccess(null));
+            } catch (Exception e) {
+                mainHandler.post(() -> callback.onError(e));
+            }
+        });
+    }
+
 }

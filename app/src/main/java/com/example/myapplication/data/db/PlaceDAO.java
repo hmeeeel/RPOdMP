@@ -43,11 +43,14 @@ public interface PlaceDAO {
 
     @Delete
     void deletePlace(Place place);
+
     @Query("SELECT * FROM places WHERE ABS(latitude - :lat) < 0.0001 AND ABS(longitude - :lon) < 0.0001 LIMIT 1")
     Place findByCoordinates(double lat, double lon);
 
     @Query("SELECT * FROM places WHERE name LIKE :name LIMIT 1")
     Place findByName(String name);
+    @Query("SELECT * FROM places WHERE firestoreId = :firestoreId LIMIT 1")
+    Place findByFirestoreId(String firestoreId);
 
     @RawQuery(observedEntities = Place.class)
     List<Place> getPlacesRaw(SupportSQLiteQuery query);

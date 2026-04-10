@@ -30,13 +30,14 @@ public class MuseumDetailActivity extends BaseActivity {
 
     private Place place;
     private FirestoreRepository repository;
+    private PlaceRepository roomRepository;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
 
-       // repository = PlaceRepository.getInstance(this);
+        roomRepository = PlaceRepository.getInstance(this);
         repository = FirestoreRepository.getInstance();
         setupToolbar();
 
@@ -190,11 +191,17 @@ public class MuseumDetailActivity extends BaseActivity {
         repository.delete(place.getFirestoreId(), new PlaceRepository.DataCallback<Void>() {
             @Override
             public void onSuccess(Void data) {
+                //  удаляем и из Room
+                roomRepository.deletePlace(place, new PlaceRepository.DataCallback<Void>() {
+                    @Override
+                    public void onSuccess(Void v) { }
+                    @Override
+                    public void onError(Exception e) { /* Room не критичен */ }
+                });
                 Toast.makeText(MuseumDetailActivity.this,
                         getString(R.string.museum_deleted), Toast.LENGTH_SHORT).show();
                 finish();
             }
-
             @Override
             public void onError(Exception e) {
                 Toast.makeText(MuseumDetailActivity.this,
