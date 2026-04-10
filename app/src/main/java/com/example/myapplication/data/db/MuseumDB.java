@@ -10,7 +10,7 @@ import androidx.room.TypeConverters;
 import com.example.myapplication.data.model.CachedPlace;
 import com.example.myapplication.data.model.Place;
 
-@Database(entities = {Place.class, CachedPlace.class}, version = 9)
+@Database(entities = {Place.class, CachedPlace.class}, version = 12)
 @TypeConverters(Converters.class)
 public abstract class MuseumDB extends RoomDatabase {
     private static volatile MuseumDB instance;
