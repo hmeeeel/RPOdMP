@@ -57,58 +57,22 @@ public class MapViewModel extends AndroidViewModel {
 
     public void loadPlaces(double lat, double lon, boolean isOnline) {
         _isLoading.setValue(true);
-
-        // 1 Загружаем пользовательские места из Firestore
-        firestoreRepository.getAll(new PlaceRepository.DataCallback<List<Place>>() {
-            @Override
-            public void onSuccess(List<Place> firestorePlaces) {
-                //  Фильтруем только места с координатами
-                List<Place> withCoords = new ArrayList<>();
-                for (Place p : firestorePlaces) {
-                    if (p.hasCoordinates()) {
-                        withCoords.add(p);
-                    }
-                }
-
-                // Сразу отображаем на карте (пользовательские маркеры) Конвертируем Place in MapMarker
-                List<MapMarker> userMarkers = toMarkers(withCoords);
-                _markers.setValue(userMarkers); // без янд
-
-                //  2 Если онлайн, загружаем Yandex API
-                if (isOnline) {
-                    loadYandexPlaces(lat, lon, withCoords, userMarkers);
-                } else {
-                    _isLoading.setValue(false);
-                    if (withCoords.isEmpty()) {
-                        _snackbarMessage.setValue("no_data");
-                    } else {
-                        _snackbarMessage.setValue("offline_cache");
-                    }
-                }
-            }
-
-            @Override
-            public void onError(Exception e) {
-                _isLoading.setValue(false);
-                _snackbarMessage.setValue("error_loading");
-            }
-        });
-    }
-
-    private void loadYandexPlaces(double lat, double lon,
-                                  List<Place> existingPlaces,
-                                  List<MapMarker> userMarkers) {
         executor.execute(() -> {
-            // Чистим устаревший кэш 30 дн и 6ч
+
+            // Места с координатами из Room - маркеры на карту
+            List<Place> saved = db.placeDAO().getPlacesWithCoordinates();
+            if (!saved.isEmpty()) {
+                mainHandler.post(() -> _markers.setValue(toMarkers(saved)));
+            }
+
+            // Чистим устаревший кэш
             long expiryTime = System.currentTimeMillis() - MAX_CACHE_AGE_MS;
             db.cachedPlaceDAO().deleteExpiredCache(expiryTime);
 
-            long lastUpdate = db.cachedPlaceDAO().getLastUpdateTime(
-                    YandexSearchRepository.SEARCH_QUERY);
+            long lastUpdate   = db.cachedPlaceDAO().getLastUpdateTime(YandexSearchRepository.SEARCH_QUERY);
             boolean isCacheStale = (System.currentTimeMillis() - lastUpdate) > CACHE_TTL_MS;
 
-            if (isCacheStale) {// утсарел
-                // Запрос к Yandex API
+            if (isOnline && (isCacheStale || saved.isEmpty())) {
                 mainHandler.post(() ->
                         searchRepository.searchMuseums(lat, lon,
                                 new YandexSearchRepository.SearchCallback() {
@@ -120,20 +84,32 @@ public class MapViewModel extends AndroidViewModel {
                                                     YandexSearchRepository.SEARCH_QUERY);
                                             db.cachedPlaceDAO().insertAll(fresh);
 
-                                            // Фильтруем новые места
-                                            List<CachedPlace> newPlaces =
-                                                    filterNewPlaces(fresh, existingPlaces);
+                                            // Фильтруем: только места которых ещё нет в Room
+                                            List<Place> newPlaces = new ArrayList<>();
+                                            for (CachedPlace cached : fresh) {
+                                                boolean exists = db.placeDAO().countByCoordinates(
+                                                        cached.getLatitude(),
+                                                        cached.getLongitude()) > 0;
+                                                if (!exists) {
+                                                    newPlaces.add(Place.fromCachedPlace(cached));
+                                                }
+                                            }
 
-                                            // Объединяем маркеры
-                                            List<MapMarker> allMarkers = new ArrayList<>(userMarkers);
-                                            allMarkers.addAll(toMarkersFromCache(newPlaces));
+                                            if (!newPlaces.isEmpty()) {
+                                                // 1. Сохраняем в Room (для карты — без изменений)
+                                                db.placeDAO().insertAll(newPlaces);
+
+                                                // 2. Сохраняем в Firestore (для главного экрана)
+                                                saveNewPlacesToFirestore(newPlaces);
+                                            }
+
+                                            List<Place> updated =
+                                                    db.placeDAO().getPlacesWithCoordinates();
 
                                             mainHandler.post(() -> {
-                                                _markers.setValue(allMarkers);
+                                                _markers.setValue(toMarkers(updated));
                                                 _isLoading.setValue(false);
-                                                if (!newPlaces.isEmpty()) {
-                                                    _snackbarMessage.setValue("cache_updated");
-                                                }
+                                                _snackbarMessage.setValue("cache_updated");
                                             });
                                         });
                                     }
@@ -142,61 +118,22 @@ public class MapViewModel extends AndroidViewModel {
                                     public void onError(String errorMsg) {
                                         mainHandler.post(() -> {
                                             _isLoading.setValue(false);
-                                            _snackbarMessage.setValue("offline_cache");
+                                            _snackbarMessage.setValue(
+                                                    saved.isEmpty() ? "no_data" : "offline_cache");
                                         });
                                     }
                                 })
                 );
-            } else {
-                // Используем кэш
-                List<CachedPlace> cached = db.cachedPlaceDAO().getCachedPlaces(
-                        YandexSearchRepository.SEARCH_QUERY);
-                List<CachedPlace> newPlaces = filterNewPlaces(cached, existingPlaces);
-
-                List<MapMarker> allMarkers = new ArrayList<>(userMarkers);
-                allMarkers.addAll(toMarkersFromCache(newPlaces));
-
+            } else if (!isOnline) {
                 mainHandler.post(() -> {
-                    _markers.setValue(allMarkers);
                     _isLoading.setValue(false);
+                    _snackbarMessage.setValue(saved.isEmpty() ? "no_data" : "offline_cache");
                 });
+            } else {
+                mainHandler.post(() -> _isLoading.setValue(false));
             }
         });
     }
-
-    // Фильтрация: убираем дубликаты (уже сохранённые в Firestore)
-    private List<CachedPlace> filterNewPlaces(List<CachedPlace> cached,
-                                              List<Place> existing) {
-        List<CachedPlace> newPlaces = new ArrayList<>();
-
-        for (CachedPlace c : cached) {
-            boolean isDuplicate = false;
-
-            for (Place p : existing) {
-                if (Math.abs(p.getLatitude() - c.getLatitude()) < 0.0001 &&
-                        Math.abs(p.getLongitude() - c.getLongitude()) < 0.0001) {
-                    isDuplicate = true;
-                    break;
-                }
-            }
-
-            if (!isDuplicate) {
-                newPlaces.add(c);
-            }
-        }
-
-        return newPlaces;
-    }
-
-    // Конвертация CachedPlace в MapMarker (БЕЗ сохранения в БД!)
-    private List<MapMarker> toMarkersFromCache(List<CachedPlace> cached) {
-        List<MapMarker> markers = new ArrayList<>();
-        for (CachedPlace c : cached) {
-            markers.add(MapMarker.fromCachedPlace(c));
-        }
-        return markers;
-    }
-
 
     private void saveNewPlacesToFirestore(List<Place> places) {
         for (Place place : places) {
