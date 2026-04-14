@@ -111,4 +111,23 @@
     <string name="remove_image">Удалить фото</string>
     <string name="preview_image">Превью изображения</string>
     <string name="error_saving_image">Ошибка сохранения изображения</string>
+
+    <string name="email">Email</string>
+    <string name="password">Пароль</string>
+    <string name="login">Войти</string>
+    <string name="register">Зарегистрироваться</string>
+    <string name="no_account">Нет аккаунта? Зарегистрироваться</string>
+    <string name="have_account">Уже есть аккаунт? Войти</string>
+    <string name="logout">Выйти из аккаунта</string>
+    <string name="logout_confirm">Вы уверены, что хотите выйти?</string>
+    <string name="yes">Да</string>
+    <string name="delete_account">Удалить аккаунт</string>
+    <string name="delete_account_confirm">Введите email и пароль для подтверждения. Все ваши данные будут удалены безвозвратно.</string>
+    <string name="error_empty_fields">Заполните все поля</string>
+    <string name="error_reauth">Неверный email или пароль</string>
+
+    <string name="auth_error_user_not_found">Пользователь с таким email не найден.</string>
+    <string name="auth_error_wrong_password">Неверный пароль. Пожалуйста, попробуйте снова.</string>
+    <string name="auth_error_email_in_use">Этот email уже зарегистрирован.</string>
+    <string name="auth_error_generic">Ошибка аутентификации. Попробуйте позже.</string>
 </resources>

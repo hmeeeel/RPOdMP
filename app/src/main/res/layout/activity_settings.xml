@@ -186,6 +186,31 @@
                 android:textSize="18sp"
                 tools:text="Время: 10:00" />
 
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginVertical="16dp"
+                android:background="?android:attr/textColorSecondary"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnLogout"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="@string/logout"
+                app:strokeWidth="1dp"
+                app:strokeColor="?android:attr/textColorPrimary"
+                android:textColor="?android:attr/textColorPrimary"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDeleteAccount"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="8dp"
+                android:text="@string/delete_account"
+                android:backgroundTint="#B00020"
+                android:visibility="gone"/>
         </LinearLayout>
     </ScrollView>
 

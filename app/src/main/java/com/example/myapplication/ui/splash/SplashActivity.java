@@ -8,18 +8,22 @@ import android.os.Looper;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.splashscreen.SplashScreen;
 
+import com.example.myapplication.ui.auth.AuthManager;
+import com.example.myapplication.ui.auth.LoginActivity;
 import com.example.myapplication.ui.main.MainActivity;
 
 public class SplashActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         SplashScreen splashScreen = SplashScreen.installSplashScreen(this);
         splashScreen.setKeepOnScreenCondition(() -> true);
 
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            startActivity(new Intent(this, MainActivity.class));
+            Class<?> next = AuthManager.getInstance().isLoggedIn()
+                    ? MainActivity.class
+                    : LoginActivity.class;
+            startActivity(new Intent(this, next));
             finish();
         }, 2000);
     }

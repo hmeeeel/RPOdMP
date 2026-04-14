@@ -7,11 +7,14 @@ import android.os.Build;
 
 import com.example.myapplication.data.firestore.AnonymousPathProvider;
 import com.example.myapplication.data.firestore.FirestoreRepository;
+import com.example.myapplication.data.firestore.UserPathProvider;
 import com.example.myapplication.data.repository.PlaceRepository;
 import com.example.myapplication.ui.notification.NotificationScheduler;
 import com.example.myapplication.ui.notification.NotificationWorker;
 import com.example.myapplication.ui.settings.SettingsManager;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.yandex.mapkit.MapKitFactory;
@@ -36,7 +39,10 @@ public class App extends Application {
         FirebaseFirestore.getInstance().setFirestoreSettings(settings);
 
         // 4. Инициализация FirestoreRepository
-        FirestoreRepository.getInstance(new AnonymousPathProvider());
+        //FirestoreRepository.getInstance(new AnonymousPathProvider());
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null) FirestoreRepository.getInstance(new UserPathProvider(user.getUid()));
+
 
         // Room оставлен для карты и кэша
         PlaceRepository.getInstance(this);

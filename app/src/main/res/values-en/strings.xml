@@ -111,4 +111,25 @@
     <string name="remove_image">Delete photo</string>
     <string name="preview_image">Image preview</string>
     <string name="error_saving_image">Error saving image</string>
+
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="login">Log In</string>
+    <string name="register">Sign Up</string>
+    <string name="no_account">No account yet? Sign up</string>
+    <string name="have_account">Already have an account? Log in</string>
+
+    <string name="logout">Log Out</string>
+    <string name="logout_confirm">Are you sure you want to log out?</string>
+    <string name="yes">Yes</string>
+    <string name="delete_account">Delete Account</string>
+    <string name="delete_account_confirm">Enter your email and password to confirm. All your data will be permanently deleted.</string>
+
+    <string name="error_empty_fields">Please fill in all fields</string>
+    <string name="error_reauth">Incorrect email or password</string>
+
+    <string name="auth_error_user_not_found">User with this email not found.</string>
+    <string name="auth_error_wrong_password">Incorrect password. Please try again.</string>
+    <string name="auth_error_email_in_use">This email is already in use.</string>
+    <string name="auth_error_generic">Authentication failed. Please try again later.</string>
 </resources>

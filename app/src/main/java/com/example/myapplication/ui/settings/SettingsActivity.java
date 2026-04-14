@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
@@ -20,12 +21,19 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
 
 import com.example.myapplication.R;
+import com.example.myapplication.data.db.MuseumDB;
+import com.example.myapplication.data.firestore.FirestoreRepository;
+import com.example.myapplication.data.model.Place;
+import com.example.myapplication.data.repository.PlaceRepository;
 import com.example.myapplication.ui.add.AddMuseumActivity;
+import com.example.myapplication.ui.auth.AuthManager;
+import com.example.myapplication.ui.auth.LoginActivity;
 import com.example.myapplication.ui.main.BaseActivity;
 import com.example.myapplication.ui.main.MainActivity;
 import com.example.myapplication.ui.map.MapActivity;
 import com.example.myapplication.ui.notification.NotificationScheduler;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.textfield.TextInputEditText;
 
 import java.util.Calendar;
 import java.util.Locale;
@@ -39,7 +47,7 @@ public class SettingsActivity extends BaseActivity {
     private SwitchCompat notificationSwitch;
     private TextView     textNotificationDay;
     private TextView     textNotificationTime;
-
+    Button btnLogout, btnDeleteAccount;
     private static final int[] DAY_OF_WEEK_VALUES = {
             Calendar.MONDAY, Calendar.TUESDAY, Calendar.WEDNESDAY,
             Calendar.THURSDAY, Calendar.FRIDAY, Calendar.SATURDAY, Calendar.SUNDAY
@@ -80,6 +88,11 @@ public class SettingsActivity extends BaseActivity {
         notificationSwitch  = findViewById(R.id.notificationSwitch);
         textNotificationDay  = findViewById(R.id.textNotificationDay);
         textNotificationTime = findViewById(R.id.textNotificationTime);
+
+         btnLogout = findViewById(R.id.btnLogout);
+         btnDeleteAccount = findViewById(R.id.btnDeleteAccount);
+
+        if (AuthManager.getInstance().isLoggedIn()) btnDeleteAccount.setVisibility(View.VISIBLE);
     }
 
     private void loadCurrentSettings() {
@@ -134,8 +147,138 @@ public class SettingsActivity extends BaseActivity {
         });
         textNotificationDay.setOnClickListener(v -> showDayPickerDialog());
         textNotificationTime.setOnClickListener(v -> showTimePicker());
+
+        btnLogout.setOnClickListener(v -> showLogoutDialog());
+        btnDeleteAccount.setOnClickListener(v -> showDeleteAccountDialog());
+    }
+    private void showLogoutDialog() {
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(getString(R.string.logout))
+                .setMessage(getString(R.string.logout_confirm))
+                .setPositiveButton(getString(R.string.yes), (d, w) -> performLogout())
+                .setNegativeButton(getString(R.string.cancel), null)
+                .create();
+
+        dialog.show();
+
+        Button positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+        if (positiveButton != null) {
+            int color = settingsManager.isDarkTheme() ?
+                    ContextCompat.getColor(this, R.color.light) :
+                    ContextCompat.getColor(this, R.color.dark);
+            positiveButton.setTextColor(color);
+        }
+
+        Button negativeButton = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
+        if (negativeButton != null) {
+            int color = settingsManager.isDarkTheme() ?
+                    ContextCompat.getColor(this, R.color.light) :
+                    ContextCompat.getColor(this, R.color.dark);
+            negativeButton.setTextColor(color);
+        }
     }
 
+    private void performLogout() {
+        settingsManager.saveLogoutTime(System.currentTimeMillis()); // для 7-дневного бездействия
+
+        AuthManager.getInstance().signOut();
+
+        new Thread(() -> {
+            com.example.myapplication.data.db.MuseumDB.getInstance(this)
+                    .clearAllTables();
+        }).start();
+
+        Intent intent = new Intent(this,
+                com.example.myapplication.ui.auth.LoginActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
+    }
+
+    private void showDeleteAccountDialog() {
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_reauth, null);
+        TextInputEditText editEmail    = dialogView.findViewById(R.id.editReauthEmail);
+        TextInputEditText editPassword = dialogView.findViewById(R.id.editReauthPassword);
+
+        // Применяем тему к полям ввода внутри диалога
+        dialogView.getContext().setTheme(R.style.TextInputTheme);
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(getString(R.string.delete_account))
+                .setMessage(getString(R.string.delete_account_confirm))
+                .setView(dialogView)
+                .setPositiveButton(getString(R.string.delete), (d, w) -> {
+                    String email = editEmail.getText().toString().trim();
+                    String pass  = editPassword.getText().toString().trim();
+                    if (email.isEmpty() || pass.isEmpty()) {
+                        Toast.makeText(this, R.string.error_empty_fields, Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    reauthAndDelete(email, pass);
+                })
+                .setNegativeButton(getString(R.string.cancel), null)
+                .create();
+
+        dialog.show();
+
+        // Точно так же меняем цвет кнопок
+        Button positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+        if (positiveButton != null) {
+            // Для кнопки удаления лучше использовать красный цвет
+            positiveButton.setTextColor(ContextCompat.getColor(this, R.color.error_red));
+        }
+
+        Button negativeButton = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
+        if (negativeButton != null) {
+            int color = settingsManager.isDarkTheme() ?
+                    ContextCompat.getColor(this, R.color.light) :
+                    ContextCompat.getColor(this, R.color.dark);
+            negativeButton.setTextColor(color);
+        }
+    }
+
+    private void reauthAndDelete(String email, String password) {
+        AuthManager.getInstance().reauthenticate(email, password, new AuthManager.AuthCallback() {
+            @Override
+            public void onSuccess(com.google.firebase.auth.FirebaseUser user) {
+                FirestoreRepository repo = FirestoreRepository.getInstance();
+                repo.getAll(new PlaceRepository.DataCallback<java.util.List<Place>>() {
+                    @Override
+                    public void onSuccess(java.util.List<Place> places) {
+                        for (Place p : places) {
+                            if (p.getFirestoreId() != null)
+                                repo.delete(p.getFirestoreId(), new PlaceRepository.DataCallback<Void>() {
+                                    public void onSuccess(Void v) {}
+                                    public void onError(Exception e) {}
+                                });
+                        }
+                        AuthManager.getInstance().deleteAccount(new AuthManager.AuthCallback() {
+                            @Override
+                            public void onSuccess(com.google.firebase.auth.FirebaseUser u) {
+                                settingsManager.clearUserProfile();
+                                new Thread(() -> MuseumDB.getInstance(SettingsActivity.this)
+                                        .clearAllTables()).start();
+                                Intent intent = new Intent(SettingsActivity.this, LoginActivity.class);
+                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                startActivity(intent);
+                            }
+                            @Override
+                            public void onError(Exception e) {
+                                Toast.makeText(SettingsActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
+                            }
+                        });
+                    }
+                    @Override
+                    public void onError(Exception e) { /* Firestore недоступен - всё равно удаляем аккаунт */ }
+                });
+            }
+            @Override
+            public void onError(Exception e) {
+                Toast.makeText(SettingsActivity.this,
+                        getString(R.string.error_reauth), Toast.LENGTH_LONG).show();
+            }
+        });
+    }
     private void requestNotificationPermissionIfNeeded() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)

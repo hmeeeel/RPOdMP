@@ -18,4 +18,6 @@
     <color name="text_dark">#FFFFFF</color>
     <color name="text_dark_2">#B3B3B3</color>
     <color name="border_dark">#424242</color>
+
+    <color name="error_red">#B00020</color>
 </resources>

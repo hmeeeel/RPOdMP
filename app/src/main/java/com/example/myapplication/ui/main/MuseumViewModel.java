@@ -98,7 +98,7 @@ public class MuseumViewModel extends AndroidViewModel {
 
             @Override
             public void onError(Exception e) {
-                _isLoading.setValue(false);c
+                _isLoading.setValue(false);
                 _error.setValue(e.getMessage());
             }
         });

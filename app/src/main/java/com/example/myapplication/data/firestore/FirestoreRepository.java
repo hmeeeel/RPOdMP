@@ -28,21 +28,12 @@ public class FirestoreRepository implements PlaceDataSource {
         this.mainHandler = new Handler(Looper.getMainLooper());
     }
 
-    public static FirestoreRepository getInstance(PathProvider pathProvider) {
-        if (instance == null) {
-            synchronized (FirestoreRepository.class) {
-                if (instance == null) {
-                    instance = new FirestoreRepository(pathProvider);
-                }
-            }
-        }
-        return instance;
+    public static synchronized void getInstance(PathProvider pathProvider) {
+        instance = new FirestoreRepository(pathProvider);
     }
 
     public static FirestoreRepository getInstance() {
-        if (instance == null) {
-            throw new IllegalStateException("FirestoreRepository не инициализирован");
-        }
+        if (instance == null) throw new IllegalStateException("FirestoreRepository не инициализирован");
         return instance;
     }
 

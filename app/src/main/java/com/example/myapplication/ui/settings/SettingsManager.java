@@ -27,6 +27,10 @@ public class SettingsManager {
 
     private final SharedPreferences preferences;
 
+    private static final String KEY_USER_UID   = "user_uid";
+    private static final String KEY_USER_EMAIL = "user_email";
+    private static final String KEY_USER_NAME  = "user_name";
+    private static final String KEY_LOGOUT_TIME = "logout_time";
     public SettingsManager(Context context) {
         this.preferences = context.getSharedPreferences("App", Context.MODE_PRIVATE);
     }
@@ -97,5 +101,32 @@ public class SettingsManager {
 
     public int getNotificationMinute() {
         return preferences.getInt(KEY_NOTIFICATION_MINUTE, DEFAULT_MINUTE);
+    }
+    public void saveUserProfile(String uid, String email, String name) {
+        preferences.edit()
+                .putString(KEY_USER_UID, uid)
+                .putString(KEY_USER_EMAIL, email)
+                .putString(KEY_USER_NAME, name != null ? name : email)
+                .apply();
+    }
+
+    public void clearUserProfile() {
+        preferences.edit()
+                .remove(KEY_USER_UID)
+                .remove(KEY_USER_EMAIL)
+                .remove(KEY_USER_NAME)
+                .apply();
+    }
+
+    public String getUserUid()   { return preferences.getString(KEY_USER_UID, ""); }
+    public String getUserEmail() { return preferences.getString(KEY_USER_EMAIL, ""); }
+    public String getUserName()  { return preferences.getString(KEY_USER_NAME, ""); }
+
+    public void saveLogoutTime(long time) {
+        preferences.edit().putLong(KEY_LOGOUT_TIME, time).apply();
+    }
+
+    public long getLogoutTime() {
+        return preferences.getLong(KEY_LOGOUT_TIME, 0);
     }
 }
