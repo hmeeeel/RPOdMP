@@ -134,4 +134,10 @@
     <string name="auth_error_generic">Authentication failed. Please try again later.</string>
 
     <string name="location_permission_denied">Location permission denied. Map centered on Minsk.</string>
+
+    <string name="add_place_question">Add this place to the list?</string>
+    <string name="add">Add</string>
+
+    <string name="add_place_from_map">Adding Place from Map</string>
+    <string name="coordinates_prefilled">Coordinates automatically filled from map</string>
 </resources>

@@ -8,6 +8,7 @@ import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.ViewModelProvider;
@@ -29,6 +30,8 @@ import com.yandex.mapkit.location.Purpose;
 import com.yandex.mapkit.location.SubscriptionSettings;
 import com.yandex.mapkit.location.UseInBackground;
 import com.yandex.mapkit.map.CameraPosition;
+import com.yandex.mapkit.map.InputListener;
+import com.yandex.mapkit.map.Map;
 import com.yandex.mapkit.map.MapObjectCollection;
 import com.yandex.mapkit.map.MapObjectTapListener;
 import com.yandex.mapkit.map.MapType;
@@ -39,7 +42,7 @@ import com.yandex.runtime.image.ImageProvider;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MapActivity extends BaseActivity {
+public class MapActivity extends BaseActivity implements InputListener {
 
     private static final double DEFAULT_LAT = 53.9000;
     private static final double DEFAULT_LON = 27.5667;
@@ -47,12 +50,11 @@ public class MapActivity extends BaseActivity {
 
     private MapView mapView;
     private MapViewModel viewModel;
-    private MapObjectCollection markersCollection;
+    private MapObjectCollection markersCollection, userMarkerCollection, temporaryMarkerCollection;
 
-    private ImageProvider iconVisited, iconPlanned, iconApiResult, iconUserLocation;
-
-    private PlacemarkMapObject userLocationMarker;
-    private Snackbar networkSnackbar;
+    private ImageProvider iconVisited, iconPlanned, iconApiResult, iconUserLocation, iconTemporary;
+    private PlacemarkMapObject userLocationMarker, temporaryMarker;
+    private Snackbar networkSnackbar, addPlaceSnackbar;
     private final List<MapObjectTapListener> tapListeners = new ArrayList<>();
 
     private LocationManager locationManager;
@@ -90,14 +92,20 @@ public class MapActivity extends BaseActivity {
         markersCollection = mapView.getMapWindow().getMap()
                 .getMapObjects().addCollection();
 
+        userMarkerCollection = mapView.getMapWindow().getMap()
+                .getMapObjects().addCollection();
+        temporaryMarkerCollection = mapView.getMapWindow().getMap()
+                .getMapObjects().addCollection();
+
         iconVisited   = ImageProvider.fromResource(this, R.drawable.placeholder32);
         iconPlanned   = ImageProvider.fromResource(this, R.drawable.place_want);
         iconApiResult = ImageProvider.fromResource(this, R.drawable.place_cash);
-        iconUserLocation = ImageProvider.fromResource(this, R.drawable.place_cash);
-
+        iconUserLocation = ImageProvider.fromResource(this, R.drawable.my_location);
+        iconTemporary = ImageProvider.fromResource(this, R.drawable.pin);
         setupToolbar();
         setupBottomNavigation();
         setupMap();
+
         observeViewModel();
         observeNetwork();
 
@@ -106,6 +114,61 @@ public class MapActivity extends BaseActivity {
         requestLocationPermission();
     }
 
+
+    private void handleLongTap(Point point) {
+        removeTemporaryMarker();
+
+        temporaryMarker = temporaryMarkerCollection.addPlacemark();
+        temporaryMarker.setGeometry(point);
+        temporaryMarker.setIcon(iconTemporary);
+        temporaryMarker.setZIndex(50f);
+        showAddPlaceSnackbar(point);
+    }
+
+    private void showAddPlaceSnackbar(Point point) {
+        if (addPlaceSnackbar != null && addPlaceSnackbar.isShown()) {
+            addPlaceSnackbar.dismiss();
+        }
+
+        addPlaceSnackbar = Snackbar.make(
+                mapView,
+                getString(R.string.add_place_question),
+                Snackbar.LENGTH_LONG
+        );
+
+        addPlaceSnackbar.setAction(getString(R.string.add), v -> {
+            openAddMuseumActivity(point.getLatitude(), point.getLongitude());
+            removeTemporaryMarker();
+        });
+
+        addPlaceSnackbar.addCallback(new Snackbar.Callback() {
+            @Override
+            public void onDismissed(Snackbar transientBottomBar, int event) {
+                super.onDismissed(transientBottomBar, event);
+                if (event != DISMISS_EVENT_ACTION) {
+                    removeTemporaryMarker();
+                }
+            }
+        });
+
+        addPlaceSnackbar.setAnchorView(R.id.menu_navigation);
+        addPlaceSnackbar.show();
+    }
+
+    private void openAddMuseumActivity(double latitude, double longitude) {
+        Intent intent = new Intent(this, AddMuseumActivity.class);
+        intent.putExtra("latitude", latitude);
+        intent.putExtra("longitude", longitude);
+        intent.putExtra("fromMap", true);
+        startActivity(intent);
+    }
+
+    private void removeTemporaryMarker() {
+        if (temporaryMarker != null) {
+            temporaryMarkerCollection.remove(temporaryMarker);
+            temporaryMarker = null;
+        }
+    }
 
     // 1 запрос разрешения
     private void requestLocationPermission() {
@@ -128,36 +191,39 @@ public class MapActivity extends BaseActivity {
     private void startLocationUpdates() {
         locationListener = new LocationListener() {
 
-            // при получении новой локации
             @Override
             public void onLocationUpdated(Location location) {
-                if (locationReceived) return; // центрируем только один раз
-                locationReceived = true;
-
                 Point userPoint = location.getPosition();
 
                 if (userLocationMarker == null) {
-                    userLocationMarker = markersCollection.addPlacemark();
+                    userLocationMarker = userMarkerCollection.addPlacemark();  // ← userMarkerCollection!
                     userLocationMarker.setIcon(iconUserLocation);
                     userLocationMarker.setZIndex(100f);
                 }
+                userLocationMarker.setGeometry(userPoint);
 
-                mapView.getMapWindow().getMap().move(
-                        new CameraPosition(userPoint, DEFAULT_ZOOM, 0.0f, 0.0f)
-                );
+                if (!locationReceived) {
+                    locationReceived = true;
 
-                viewModel.loadPlaces(
-                        userPoint.getLatitude(),
-                        userPoint.getLongitude(),
-                        Boolean.TRUE.equals(viewModel.networkMonitor.getValue())
-                );
+                    mapView.getMapWindow().getMap().move(
+                            new CameraPosition(userPoint, DEFAULT_ZOOM, 0.0f, 0.0f)
+                    );
+
+                    viewModel.loadPlaces(
+                            userPoint.getLatitude(),
+                            userPoint.getLongitude(),
+                            Boolean.TRUE.equals(viewModel.networkMonitor.getValue())
+                    );
+                }
             }
 
-            // при изменении  локации
             @Override
             public void onLocationStatusUpdated(LocationStatus locationStatus) {
-                // LocationStatus.NOT_AVAILABLE — источник недоступен
-                // карта уже показывает Минск по умолчанию
+                if (locationStatus == LocationStatus.NOT_AVAILABLE && !locationReceived) {
+                    Toast.makeText(MapActivity.this,
+                            "Геолокация недоступна",
+                            Toast.LENGTH_SHORT).show();
+                }
             }
         };
 
@@ -165,6 +231,7 @@ public class MapActivity extends BaseActivity {
                 UseInBackground.DISALLOW,
                 Purpose.GENERAL
         );
+
         locationManager.subscribeForLocationUpdates(
                 subscriptionSettings,
                 locationListener
@@ -185,6 +252,7 @@ public class MapActivity extends BaseActivity {
                 new Point(DEFAULT_LAT, DEFAULT_LON),
                 DEFAULT_ZOOM, 0.0f, 0.0f
         ));
+        map.addInputListener(this);
     }
 
     private void observeViewModel() {
@@ -259,8 +327,31 @@ public class MapActivity extends BaseActivity {
 
     @Override
     protected void onDestroy() {
+        if (mapView != null) {
+            mapView.getMapWindow().getMap().removeInputListener(this);
+        }
         stopLocationUpdates(); // освобождаем ресурс
+
+        if (markersCollection != null) markersCollection.clear();
+        if (userMarkerCollection != null) userMarkerCollection.clear();
+        if (temporaryMarkerCollection != null) temporaryMarkerCollection.clear();
+        tapListeners.clear();
+
+        userLocationMarker = null;
+        locationListener = null;
+
+        removeTemporaryMarker();
+
         super.onDestroy();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        removeTemporaryMarker();
+        if (addPlaceSnackbar != null && addPlaceSnackbar.isShown()) {
+            addPlaceSnackbar.dismiss();
+        }
     }
 
     private void setupToolbar() {
@@ -289,5 +380,20 @@ public class MapActivity extends BaseActivity {
             }
             return false;
         });
+    }
+
+    @Override
+    public void onMapTap(@NonNull Map map, @NonNull Point point) {
+        if (temporaryMarker != null) {
+            removeTemporaryMarker();
+        }
+        if (addPlaceSnackbar != null && addPlaceSnackbar.isShown()) {
+            addPlaceSnackbar.dismiss();
+        }
+    }
+
+    @Override
+    public void onMapLongTap(@NonNull Map map, @NonNull Point point) {
+        handleLongTap(point);
     }
 }

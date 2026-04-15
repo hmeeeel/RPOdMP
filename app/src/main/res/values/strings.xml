@@ -133,4 +133,9 @@
 
     <string name="location_permission_denied">Разрешение на геолокацию отклонено. Карта центрирована на Минске.</string>
 
+    <string name="add_place_question">Добавить это место в список?</string>
+    <string name="add">Добавить</string>
+
+    <string name="add_place_from_map">Добавление места с карты</string>
+    <string name="coordinates_prefilled">Координаты заполнены автоматически с карты</string>
 </resources>

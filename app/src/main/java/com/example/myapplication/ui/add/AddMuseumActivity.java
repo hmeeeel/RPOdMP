@@ -28,6 +28,7 @@ import com.example.myapplication.data.serviceImage.ImageStorageService;
 import com.example.myapplication.ui.detail.MuseumDetailActivity;
 import com.example.myapplication.ui.main.BaseActivity;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
@@ -57,6 +58,8 @@ public class AddMuseumActivity extends BaseActivity implements IImageSelectionLi
     private boolean isEditMode = false;
     private AddMuseumViewModel viewModel;
 
+    private boolean fromMap = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -71,10 +74,36 @@ public class AddMuseumActivity extends BaseActivity implements IImageSelectionLi
         setupImageRecyclerView();
         setupSwitchListener();
         setupDatePicker();
+        checkCoordinatesFromIntent();
         checkEditMode();
         observeViewModel();
     }
 
+    private void checkCoordinatesFromIntent() {
+        Intent intent = getIntent();
+        fromMap = intent.getBooleanExtra("fromMap", false);
+
+        if (fromMap) {
+            double latitude = intent.getDoubleExtra("latitude", 0.0);
+            double longitude = intent.getDoubleExtra("longitude", 0.0);
+
+            if (latitude != 0.0 || longitude != 0.0) {
+                // Предзаполняем поля координат
+                editLatitude.setText(String.format(Locale.US, "%.6f", latitude));
+                editLongitude.setText(String.format(Locale.US, "%.6f", longitude));
+
+                // Показываем подсказку пользователю
+                Snackbar.make(
+                        findViewById(android.R.id.content),
+                        getString(R.string.coordinates_prefilled),
+                        Snackbar.LENGTH_LONG
+                ).show();
+
+                // Фокус на поле "Название"
+                editName.requestFocus();
+            }
+        }
+    }
     private void initViews() {
         editName         = findViewById(R.id.editName);
         editAddress      = findViewById(R.id.editAddress);
@@ -196,7 +225,8 @@ public class AddMuseumActivity extends BaseActivity implements IImageSelectionLi
             fillFormWithData(editingPlace);
         } else {
             isEditMode = false;
-            setTitle(getString(R.string.add_museum));
+            //setTitle(getString(R.string.add_museum));
+            setTitle(fromMap ? getString(R.string.add_place_from_map) : getString(R.string.add_museum));
         }
     }
 
