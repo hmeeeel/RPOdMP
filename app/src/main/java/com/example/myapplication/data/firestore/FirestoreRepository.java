@@ -8,6 +8,7 @@ import com.example.myapplication.data.repository.PlaceRepository;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -41,6 +42,23 @@ public class FirestoreRepository implements PlaceDataSource {
         return db.collection(pathProvider.getPlacesPath());
     }
 
+    public ListenerRegistration observeAll(PlaceRepository.DataCallback<List<Place>> callback) {
+        return collection().addSnapshotListener((snapshot, error) -> {
+            if (error != null) {
+                mainHandler.post(() -> callback.onError(error));
+                return;
+            }
+            if (snapshot == null) return;
+
+            List<Place> result = new ArrayList<>();
+            for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                Place p = fromSnapshot(doc);
+                if (p != null) result.add(p);
+            }
+            mainHandler.post(() -> callback.onSuccess(result));
+        });
+    }
+
     @Override
     public void getAll(PlaceRepository.DataCallback<List<Place>> callback) {
         collection().get()
@@ -67,7 +85,6 @@ public class FirestoreRepository implements PlaceDataSource {
 
     @Override
     public void insert(Place place, PlaceRepository.DataCallback<String> callback) {
-        // Генерируем ID до записи
         String placeId = collection().document().getId();
         place.setFirestoreId(placeId);
 
@@ -124,7 +141,6 @@ public class FirestoreRepository implements PlaceDataSource {
 
         Place place = new Place();
         place.setFirestoreId(doc.getId());
-
         place.setName(str(doc, "name"));
         place.setAddress(str(doc, "address"));
         place.setPhone(str(doc, "phone"));

@@ -12,6 +12,7 @@ import androidx.lifecycle.MutableLiveData;
 import com.example.myapplication.data.firestore.FirestoreRepository;
 import com.example.myapplication.data.model.Place;
 import com.example.myapplication.data.repository.PlaceRepository;
+import com.google.firebase.firestore.ListenerRegistration;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,15 +29,17 @@ public class MuseumViewModel extends AndroidViewModel {
         FilterOption(int value) { this.value = value; }
     }
 
-    private static final String PREFS_NAME   = "search_prefs";
-    private static final String KEY_SORT     = "pref_sort";
-    private static final String KEY_FILTER   = "pref_filter";
-    private static final String KEY_QUERY    = "pref_search_query";
+    private static final String PREFS_NAME = "search_prefs";
+    private static final String KEY_SORT   = "pref_sort";
+    private static final String KEY_FILTER = "pref_filter";
 
     private final FirestoreRepository repository;
     private final SharedPreferences   prefs;
 
-    private String       currentQuery;
+    private ListenerRegistration listenerRegistration;
+    private List<Place> allPlaces = new ArrayList<>();
+
+    private String       currentQuery  = "";
     private SortOption   currentSort;
     private FilterOption currentFilter;
 
@@ -53,8 +56,6 @@ public class MuseumViewModel extends AndroidViewModel {
         repository = FirestoreRepository.getInstance();
         prefs      = application.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
 
-        currentQuery = "";
-
         String savedSort = prefs.getString(KEY_SORT, SortOption.NEWEST.name());
         try { currentSort = SortOption.valueOf(savedSort); }
         catch (IllegalArgumentException e) { currentSort = SortOption.NEWEST; }
@@ -63,37 +64,18 @@ public class MuseumViewModel extends AndroidViewModel {
         try { currentFilter = FilterOption.valueOf(savedFilter); }
         catch (IllegalArgumentException e) { currentFilter = FilterOption.ALL; }
 
-        loadMuseums();
+        subscribeToFirestore();
     }
 
-    // Изменение состояния без SQL
-    public void setQuery(String query) {
-        currentQuery = query != null ? query.trim() : "";
-        loadMuseums();
-    }
-
-    public void setSort(SortOption sort) {
-        currentSort = sort;
-        prefs.edit().putString(KEY_SORT, sort.name()).apply();
-        loadMuseums();
-    }
-
-    public void setFilter(FilterOption filter) {
-        currentFilter = filter;
-        prefs.edit().putString(KEY_FILTER, filter.name()).apply();
-        loadMuseums();
-    }
-
-
-    public void loadMuseums() {
+    private void subscribeToFirestore() {
         _isLoading.setValue(true);
 
-        repository.getAll(new PlaceRepository.DataCallback<List<Place>>() {
+        listenerRegistration = repository.observeAll(new PlaceRepository.DataCallback<List<Place>>() {
             @Override
             public void onSuccess(List<Place> data) {
-                List<Place> result = applyFilterSortSearch(data);
+                allPlaces = data;
                 _isLoading.setValue(false);
-                _places.setValue(result);// передача livedata
+                applyFilterSortSearch(); // обновляем UI
             }
 
             @Override
@@ -104,11 +86,32 @@ public class MuseumViewModel extends AndroidViewModel {
         });
     }
 
-     // Фильтрация, поиск и сортировка выполняются в памяти
-    private List<Place> applyFilterSortSearch(List<Place> all) {
+    public void loadMuseums() {
+        applyFilterSortSearch();
+    }
+
+    public void setQuery(String query) {
+        currentQuery = query != null ? query.trim() : "";
+        applyFilterSortSearch();
+    }
+
+    public void setSort(SortOption sort) {
+        currentSort = sort;
+        prefs.edit().putString(KEY_SORT, sort.name()).apply();
+        applyFilterSortSearch();
+    }
+
+    public void setFilter(FilterOption filter) {
+        currentFilter = filter;
+        prefs.edit().putString(KEY_FILTER, filter.name()).apply();
+        applyFilterSortSearch();
+    }
+
+    // Фильтрация, поиск и сортировка выполняются в памяти
+    private void applyFilterSortSearch() {
         // 1. Фильтр по статусу
         List<Place> filtered = new ArrayList<>();
-        for (Place p : all) {
+        for (Place p : allPlaces) {
             if (currentFilter == FilterOption.ALL) {
                 filtered.add(p);
             } else if (currentFilter == FilterOption.VISITED && p.isVisited()) {
@@ -132,10 +135,9 @@ public class MuseumViewModel extends AndroidViewModel {
         // 3. Сортировка
         sort(searched);
 
-        return searched;
+        _places.setValue(searched);
     }
 
-    // runLikeQuery
     private List<Place> likeSearch(String query, List<Place> source) {
         String lq = query.toLowerCase(Locale.getDefault());
         List<Place> result = new ArrayList<>();
@@ -153,7 +155,6 @@ public class MuseumViewModel extends AndroidViewModel {
         return field != null && field.toLowerCase(Locale.getDefault()).contains(query);
     }
 
-    //runFuzzySearch
     private List<Place> fuzzySearch(String query, List<Place> source) {
         String lq = query.toLowerCase(Locale.getDefault());
         List<Place> result = new ArrayList<>();
@@ -165,11 +166,7 @@ public class MuseumViewModel extends AndroidViewModel {
 
     private boolean fuzzyMatch(String query, Place place) {
         if (place.getName() == null || place.getName().isEmpty()) return false;
-
-        String[] words = place.getName()
-                .toLowerCase(Locale.getDefault())
-                .split("\\s+");
-
+        String[] words = place.getName().toLowerCase(Locale.getDefault()).split("\\s+");
         for (String word : words) {
             if (levenshtein(query, word) <= 2) return true;
         }
@@ -200,12 +197,9 @@ public class MuseumViewModel extends AndroidViewModel {
 
         return Di[Di.length - 1];
     }
-
     private int min(int n1, int n2, int n3) {
         return Math.min(Math.min(n1, n2), n3);
     }
-
-
     private void sort(List<Place> list) {
         switch (currentSort) {
             case NEWEST:
@@ -234,11 +228,18 @@ public class MuseumViewModel extends AndroidViewModel {
     public void deletePlace(Place place) {
         repository.delete(place.getFirestoreId(), new PlaceRepository.DataCallback<Void>() {
             @Override
-            public void onSuccess(Void v) { loadMuseums(); }
-
+            public void onSuccess(Void v) {}
             @Override
             public void onError(Exception e) { _error.setValue(e.getMessage()); }
         });
+    }
+
+    @Override
+    protected void onCleared() {
+        super.onCleared();
+        if (listenerRegistration != null) {
+            listenerRegistration.remove();
+        }
     }
 
     public String       getCurrentQuery()  { return currentQuery; }
