@@ -130,4 +130,7 @@
     <string name="auth_error_wrong_password">Неверный пароль. Пожалуйста, попробуйте снова.</string>
     <string name="auth_error_email_in_use">Этот email уже зарегистрирован.</string>
     <string name="auth_error_generic">Ошибка аутентификации. Попробуйте позже.</string>
+
+    <string name="location_permission_denied">Разрешение на геолокацию отклонено. Карта центрирована на Минске.</string>
+
 </resources>

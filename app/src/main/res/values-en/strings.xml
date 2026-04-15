@@ -132,4 +132,6 @@
     <string name="auth_error_wrong_password">Incorrect password. Please try again.</string>
     <string name="auth_error_email_in_use">This email is already in use.</string>
     <string name="auth_error_generic">Authentication failed. Please try again later.</string>
+
+    <string name="location_permission_denied">Location permission denied. Map centered on Minsk.</string>
 </resources>
