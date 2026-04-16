@@ -2,6 +2,7 @@ package com.example.myapplication.ui.detail;
 
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -11,16 +12,19 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.widget.Toolbar;
-import androidx.core.content.ContextCompat;
+import androidx.core.app.ShareCompat;           // ShareCompat из androidx.core
+import androidx.core.content.FileProvider;       // FileProvider из androidx.core
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.example.myapplication.R;
 import com.example.myapplication.data.firestore.FirestoreRepository;
 import com.example.myapplication.data.model.Place;
 import com.example.myapplication.data.repository.PlaceRepository;
+import com.example.myapplication.data.serviceImage.ImageStorageService;
 import com.example.myapplication.ui.add.AddMuseumActivity;
 import com.example.myapplication.ui.main.BaseActivity;
 
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -49,6 +53,88 @@ public class MuseumDetailActivity extends BaseActivity {
         }
 
         bindViews();
+    }
+
+    // SHARE
+    private void sharePlace() {
+        String shareText = buildShareText();
+        Uri imageUri     = getFirstImageUri();
+
+        ShareCompat.IntentBuilder builder = new ShareCompat.IntentBuilder(this)
+                .setSubject(place.getName())
+                .setChooserTitle(getString(R.string.share_via));
+
+        if (imageUri != null) {
+            builder.setType("image/*")
+                    .addStream(imageUri)
+                    .setText(shareText);
+        } else {
+            builder.setType("text/plain")
+                    .setText(shareText);
+        }
+
+        builder.startChooser();
+    }
+
+    private String buildShareText() {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append(place.getName()).append("\n");
+        if (place.getAddress() != null && !place.getAddress().isEmpty()) {
+            sb.append(getString(R.string.address_label))
+                    .append(" ").append(place.getAddress()).append("\n");
+        }
+
+        if (place.getPhone() != null && !place.getPhone().isEmpty()) {
+            sb.append(getString(R.string.phone_label))
+                    .append(" ").append(place.getPhone()).append("\n");
+        }
+
+        if (place.getWorkingHours() != null && !place.getWorkingHours().isEmpty()) {
+            sb.append(getString(R.string.working_hours_label))
+                    .append(" ").append(place.getWorkingHours()).append("\n");
+        }
+
+        if (place.hasCoordinates()) {
+            sb.append("https://yandex.com/maps/?q=")
+                    .append(place.getLatitude()).append(",")
+                    .append(place.getLongitude()).append("\n");
+        }
+
+        if (place.getWebsite() != null && !place.getWebsite().isEmpty()) {
+            sb.append(place.getWebsite()).append("\n");
+        }
+
+        if (place.getDescription() != null && !place.getDescription().isEmpty()) {
+            sb.append("\n").append(place.getDescription());
+        }
+
+        return sb.toString();
+    }
+
+    private Uri getFirstImageUri() {
+        if (place.getImageIds() == null || place.getImageIds().isEmpty()) return null;
+
+        String fileName = place.getImageIds().get(0);
+
+        if (fileName == null || fileName.equals("no_image")) return null;
+
+        ImageStorageService imageService = new ImageStorageService(this);
+        String path = imageService.getImagePath(fileName);
+        if (path == null) return null;
+
+        File file = new File(path);
+        if (!file.exists()) return null;
+
+        try {
+            return FileProvider.getUriForFile(
+                    this,
+                    getPackageName() + ".fileprovider",
+                    file
+            );
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     private void bindViews() {
@@ -149,6 +235,9 @@ public class MuseumDetailActivity extends BaseActivity {
         } else if (id == R.id.action_delete) {
             showDeleteConfirmation();
             return true;
+        } else if (id == R.id.action_share) {
+            sharePlace();
+            return true;
         }
         return super.onOptionsItemSelected(item);
     }
@@ -172,17 +261,17 @@ public class MuseumDetailActivity extends BaseActivity {
 
         Button positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
         if (positiveButton != null) {
-            int color = settingsManager.isDarkTheme() ?
-                    ContextCompat.getColor(this, R.color.light) :
-                    ContextCompat.getColor(this, R.color.dark);
+            int color = settingsManager.isDarkTheme()
+                    ? androidx.core.content.ContextCompat.getColor(this, R.color.light)
+                    : androidx.core.content.ContextCompat.getColor(this, R.color.dark);
             positiveButton.setTextColor(color);
         }
 
         Button negativeButton = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
         if (negativeButton != null) {
-            int color = settingsManager.isDarkTheme() ?
-                    ContextCompat.getColor(this, R.color.light) :
-                    ContextCompat.getColor(this, R.color.dark);
+            int color = settingsManager.isDarkTheme()
+                    ? androidx.core.content.ContextCompat.getColor(this, R.color.light)
+                    : androidx.core.content.ContextCompat.getColor(this, R.color.dark);
             negativeButton.setTextColor(color);
         }
     }
@@ -191,12 +280,11 @@ public class MuseumDetailActivity extends BaseActivity {
         repository.delete(place.getFirestoreId(), new PlaceRepository.DataCallback<Void>() {
             @Override
             public void onSuccess(Void data) {
-                //  удаляем и из Room
                 roomRepository.deletePlace(place, new PlaceRepository.DataCallback<Void>() {
                     @Override
                     public void onSuccess(Void v) { }
                     @Override
-                    public void onError(Exception e) { /* Room не критичен */ }
+                    public void onError(Exception e) { }
                 });
                 Toast.makeText(MuseumDetailActivity.this,
                         getString(R.string.museum_deleted), Toast.LENGTH_SHORT).show();

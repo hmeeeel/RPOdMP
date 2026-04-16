@@ -138,4 +138,7 @@
 
     <string name="add_place_from_map">Добавление места с карты</string>
     <string name="coordinates_prefilled">Координаты заполнены автоматически с карты</string>
+
+    <string name="share">Поделиться</string>
+    <string name="share_via">Поделиться через…</string>
 </resources>

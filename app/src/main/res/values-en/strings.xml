@@ -140,4 +140,7 @@
 
     <string name="add_place_from_map">Adding Place from Map</string>
     <string name="coordinates_prefilled">Coordinates automatically filled from map</string>
+
+    <string name="share">Share</string>
+    <string name="share_via">Share via…</string>
 </resources>
