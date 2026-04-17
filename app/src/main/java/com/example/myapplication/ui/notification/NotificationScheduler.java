@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 public class NotificationScheduler {
 
     private static final String WORK_NAME = "museum_weekly_reminder";
-
+    public static final String WORK_TAG = "weekly_reminder";
     private NotificationScheduler() {}
 
     public static void schedule(Context context, int dayOfWeek, int hour, int minute) {
@@ -21,6 +21,7 @@ public class NotificationScheduler {
         PeriodicWorkRequest workRequest = new PeriodicWorkRequest.Builder(
                 NotificationWorker.class, 7, TimeUnit.DAYS)
                 .setInitialDelay(initialDelay, TimeUnit.MILLISECONDS)
+                .addTag(WORK_TAG)
                 .build();
 
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
@@ -28,6 +29,10 @@ public class NotificationScheduler {
                 ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE,
                 workRequest
         );
+    }
+
+    public static void cancelNotifications(Context context) {
+        WorkManager.getInstance(context).cancelAllWorkByTag(WORK_TAG);
     }
 
     public static void cancel(Context context) {

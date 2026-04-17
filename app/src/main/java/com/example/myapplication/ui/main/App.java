@@ -4,11 +4,13 @@ import android.app.Application;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.os.Build;
+import android.util.Log;
 
 import com.example.myapplication.data.firestore.AnonymousPathProvider;
 import com.example.myapplication.data.firestore.FirestoreRepository;
 import com.example.myapplication.data.firestore.UserPathProvider;
 import com.example.myapplication.data.repository.PlaceRepository;
+import com.example.myapplication.ui.auth.AuthManager;
 import com.example.myapplication.ui.notification.NotificationScheduler;
 import com.example.myapplication.ui.notification.NotificationWorker;
 import com.example.myapplication.ui.settings.SettingsManager;
@@ -22,10 +24,12 @@ import com.example.myapplication.BuildConfig;
 
 public class App extends Application {
 
+    private static final String TAG = "App";
+
     @Override
     public void onCreate() {
         super.onCreate();
-
+        AuthManager.getInstance().init(this);
         // 1. Яндекс карты
         MapKitFactory.setApiKey(BuildConfig.MAPKIT_API_KEY);
 
@@ -39,10 +43,14 @@ public class App extends Application {
         FirebaseFirestore.getInstance().setFirestoreSettings(settings);
 
         // 4. Инициализация FirestoreRepository
-        //FirestoreRepository.getInstance(new AnonymousPathProvider());
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        if (user != null) FirestoreRepository.getInstance(new UserPathProvider(user.getUid()));
-
+        if (user != null) {
+            Log.d(TAG, "User authenticated: " + user.getUid());
+            FirestoreRepository.getInstance(new UserPathProvider(user.getUid()));
+        } else {
+            Log.d(TAG, "No authenticated user, using anonymous path");
+            FirestoreRepository.getInstance(new AnonymousPathProvider());
+        }
 
         // Room оставлен для карты и кэша
         PlaceRepository.getInstance(this);
@@ -66,6 +74,7 @@ public class App extends Application {
             NotificationManager manager = getSystemService(NotificationManager.class);
             if (manager != null) {
                 manager.createNotificationChannel(channel);
+                Log.d(TAG, "Notification channel created");
             }
         }
     }
@@ -79,6 +88,10 @@ public class App extends Application {
                     settings.getNotificationHour(),
                     settings.getNotificationMinute()
             );
+            Log.d(TAG, "Notification schedule restored: day=" + settings.getNotificationDayOfWeek() +
+                    ", time=" + settings.getNotificationHour() + ":" + settings.getNotificationMinute());
+        } else {
+            Log.d(TAG, "Notifications disabled in settings");
         }
     }
 }

@@ -1,5 +1,9 @@
 package com.example.myapplication.ui.auth;
 
+import android.content.Context;
+
+import androidx.work.WorkManager;
+
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
 import com.google.firebase.auth.FirebaseAuthInvalidUserException;
@@ -9,7 +13,11 @@ import com.google.firebase.auth.FirebaseAuthException;
 public class AuthManager {
     private static AuthManager instance;
     private final FirebaseAuth auth;
+    private Context appContext;
 
+    public void init(Context context) {
+        this.appContext = context.getApplicationContext();
+    }
     private AuthManager() {
         auth = FirebaseAuth.getInstance();
     }
@@ -40,6 +48,9 @@ public class AuthManager {
     }
 
     public void signOut() {
+        if (appContext != null) {
+            WorkManager.getInstance(appContext).cancelAllWorkByTag("weekly_reminder");
+        }
         auth.signOut();
     }
 
@@ -56,6 +67,10 @@ public class AuthManager {
     public void deleteAccount(AuthCallback callback) {
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) { callback.onError(new Exception("Not logged in")); return; }
+        if (appContext != null) {
+            WorkManager.getInstance(appContext).cancelAllWorkByTag("weekly_reminder");
+        }
+
         user.delete()
                 .addOnSuccessListener(v -> callback.onSuccess(null))
                 .addOnFailureListener(callback::onError);
