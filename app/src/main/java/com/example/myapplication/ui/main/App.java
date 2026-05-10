@@ -6,19 +6,12 @@ import android.app.NotificationManager;
 import android.os.Build;
 import android.util.Log;
 
-import com.example.myapplication.data.firestore.AnonymousPathProvider;
-import com.example.myapplication.data.firestore.FirestoreRepository;
-import com.example.myapplication.data.firestore.UserPathProvider;
+import com.example.myapplication.data.supabase.SupabaseClient;
 import com.example.myapplication.data.repository.PlaceRepository;
 import com.example.myapplication.ui.auth.AuthManager;
 import com.example.myapplication.ui.notification.NotificationScheduler;
 import com.example.myapplication.ui.notification.NotificationWorker;
 import com.example.myapplication.ui.settings.SettingsManager;
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.yandex.mapkit.MapKitFactory;
 import com.example.myapplication.BuildConfig;
 
@@ -29,32 +22,27 @@ public class App extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        AuthManager.getInstance().init(this);
-        // 1. Яндекс карты
+
+        // 1. Yandex MapKit
         MapKitFactory.setApiKey(BuildConfig.MAPKIT_API_KEY);
 
-        // 2. Firebase
-        FirebaseApp.initializeApp(this);
+        // 2. AuthManager init
+        AuthManager.getInstance().init(this);
 
-        // 3. Офлайн-персистентность Firestore
-        FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
-                .setPersistenceEnabled(true)
-                .build();
-        FirebaseFirestore.getInstance().setFirestoreSettings(settings);
-
-        // 4. Инициализация FirestoreRepository
-        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        if (user != null) {
-            Log.d(TAG, "User authenticated: " + user.getUid());
-            FirestoreRepository.getInstance(new UserPathProvider(user.getUid()));
-        } else {
-            Log.d(TAG, "No authenticated user, using anonymous path");
-            FirestoreRepository.getInstance(new AnonymousPathProvider());
+        // 3. Восстановить сессию Supabase из SharedPreferences
+        SettingsManager settings = new SettingsManager(this);
+        String token   = settings.getAccessToken();
+        String refresh = settings.getRefreshToken();
+        String userId  = settings.getUserId();
+        if (token != null && userId != null) {
+            Log.d(TAG, "Restoring Supabase session for user: " + userId);
+            SupabaseClient.getInstance().setSession(token, refresh, userId);
         }
 
-        // Room оставлен для карты и кэша
+        // 4. Room (для карты и кэша)
         PlaceRepository.getInstance(this);
 
+        // 5. Уведомления
         createNotificationChannel();
         restoreNotificationSchedule();
     }
@@ -67,31 +55,22 @@ public class App extends Application {
 
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CharSequence name = getString(com.example.myapplication.R.string.notification_channel_name);
-            int importance = NotificationManager.IMPORTANCE_DEFAULT;
-            NotificationChannel channel =
-                    new NotificationChannel(NotificationWorker.CHANNEL_ID, name, importance);
+            NotificationChannel channel = new NotificationChannel(
+                    NotificationWorker.CHANNEL_ID,
+                    getString(com.example.myapplication.R.string.notification_channel_name),
+                    NotificationManager.IMPORTANCE_DEFAULT);
             NotificationManager manager = getSystemService(NotificationManager.class);
-            if (manager != null) {
-                manager.createNotificationChannel(channel);
-                Log.d(TAG, "Notification channel created");
-            }
+            if (manager != null) manager.createNotificationChannel(channel);
         }
     }
 
     private void restoreNotificationSchedule() {
         SettingsManager settings = new SettingsManager(this);
         if (settings.isNotificationsEnabled()) {
-            NotificationScheduler.schedule(
-                    this,
+            NotificationScheduler.schedule(this,
                     settings.getNotificationDayOfWeek(),
                     settings.getNotificationHour(),
-                    settings.getNotificationMinute()
-            );
-            Log.d(TAG, "Notification schedule restored: day=" + settings.getNotificationDayOfWeek() +
-                    ", time=" + settings.getNotificationHour() + ":" + settings.getNotificationMinute());
-        } else {
-            Log.d(TAG, "Notifications disabled in settings");
+                    settings.getNotificationMinute());
         }
     }
 }

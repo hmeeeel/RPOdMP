@@ -17,10 +17,11 @@ import androidx.core.content.FileProvider;       // FileProvider из androidx.c
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.example.myapplication.R;
-import com.example.myapplication.data.firestore.FirestoreRepository;
+
 import com.example.myapplication.data.model.Place;
 import com.example.myapplication.data.repository.PlaceRepository;
 import com.example.myapplication.data.serviceImage.ImageStorageService;
+import com.example.myapplication.data.supabase.SupabaseRepository;
 import com.example.myapplication.ui.add.AddMuseumActivity;
 import com.example.myapplication.ui.main.BaseActivity;
 
@@ -29,11 +30,10 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
-
 public class MuseumDetailActivity extends BaseActivity {
 
     private Place place;
-    private FirestoreRepository repository;
+    private SupabaseRepository repository;
     private PlaceRepository roomRepository;
 
     @Override
@@ -42,7 +42,8 @@ public class MuseumDetailActivity extends BaseActivity {
         setContentView(R.layout.activity_detail);
 
         roomRepository = PlaceRepository.getInstance(this);
-        repository = FirestoreRepository.getInstance();
+        //repository = FirestoreRepository.getInstance();
+        repository = SupabaseRepository.getInstance();
         setupToolbar();
 
         place = getIntent().getParcelableExtra("place");
@@ -281,13 +282,13 @@ public class MuseumDetailActivity extends BaseActivity {
             @Override
             public void onSuccess(Void data) {
                 roomRepository.deletePlace(place, new PlaceRepository.DataCallback<Void>() {
-                    @Override
-                    public void onSuccess(Void v) { }
-                    @Override
-                    public void onError(Exception e) { }
+                    @Override public void onSuccess(Void v) {}
+                    @Override public void onError(Exception e) {}
                 });
                 Toast.makeText(MuseumDetailActivity.this,
                         getString(R.string.museum_deleted), Toast.LENGTH_SHORT).show();
+                // Установить флаг чтобы MainActivity обновился
+                setResult(RESULT_OK);
                 finish();
             }
             @Override

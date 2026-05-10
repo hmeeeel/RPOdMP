@@ -10,12 +10,13 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.myapplication.data.db.MuseumDB;
-import com.example.myapplication.data.firestore.FirestoreRepository;
+
 import com.example.myapplication.data.model.CachedPlace;
 import com.example.myapplication.data.model.Place;
 import com.example.myapplication.data.network.NetworkMonitor;
 import com.example.myapplication.data.repository.PlaceRepository;
 import com.example.myapplication.data.repository.YandexSearchRepository;
+import com.example.myapplication.data.supabase.SupabaseRepository;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +30,7 @@ public class MapViewModel extends AndroidViewModel {
 
     private final YandexSearchRepository searchRepository;
     private final PlaceRepository        placeRepository;
-    private final FirestoreRepository    firestoreRepository;
+    private final SupabaseRepository    supabaseRepository;
     private final MuseumDB               db;
     private final ExecutorService        executor;
     private final Handler                mainHandler;
@@ -48,7 +49,9 @@ public class MapViewModel extends AndroidViewModel {
         super(application);
         searchRepository     = YandexSearchRepository.getInstance();
         placeRepository      = PlaceRepository.getInstance(application);
-        firestoreRepository  = FirestoreRepository.getInstance();
+        //firestoreRepository  = FirestoreRepository.getInstance();
+        supabaseRepository = SupabaseRepository.getInstance();
+
         db                   = MuseumDB.getInstance(application);
         executor             = Executors.newSingleThreadExecutor();
         mainHandler          = new Handler(Looper.getMainLooper());
@@ -67,27 +70,47 @@ public class MapViewModel extends AndroidViewModel {
     }
 
     private void syncFirestoreToRoom(double lat, double lon) {
-        firestoreRepository.getAll(new PlaceRepository.DataCallback<List<Place>>() {
+        supabaseRepository.getAll(new PlaceRepository.DataCallback<List<Place>>() {
             @Override
-            public void onSuccess(List<Place> firestorePlaces) {
+            public void onSuccess(List<Place> supabasePlaces) {
                 executor.execute(() -> {
-                    for (Place place : firestorePlaces) {
+                    // Собираем актуальные firestoreId из Supabase
+                    java.util.Set<String> actualIds = new java.util.HashSet<>();
+                    for (Place place : supabasePlaces) {
+                        if (place.getFirestoreId() != null && !place.getFirestoreId().isEmpty()) {
+                            actualIds.add(place.getFirestoreId());
+                        }
+                    }
+
+                    // Удаляем из Room те записи которых нет в Supabase
+                    List<Place> roomPlaces = db.placeDAO().getAllPlaces();
+                    for (Place roomPlace : roomPlaces) {
+                        String fid = roomPlace.getFirestoreId();
+                        // Удаляем только записи синхронизированные с Supabase
+                        // (у которых есть firestoreId, но его нет в актуальном списке)
+                        if (fid != null && !fid.isEmpty() && !actualIds.contains(fid)) {
+                            db.placeDAO().deletePlace(roomPlace);
+                        }
+                    }
+
+                    // Добавляем/обновляем актуальные записи
+                    for (Place place : supabasePlaces) {
                         String fid = place.getFirestoreId();
                         if (fid == null || fid.isEmpty()) continue;
 
                         Place existing = db.placeDAO().findByFirestoreId(fid);
                         if (existing != null) {
-                            // Обновляем если данные изменились
                             place.setId(existing.getId());
                             db.placeDAO().updatePlace(place);
                         } else if (place.hasCoordinates()) {
-                            // Новое место с координатами - добавляем на карту
                             db.placeDAO().insertPlace(place);
                         }
                     }
+
                     mainHandler.post(() -> loadFromRoomAndYandex(lat, lon, true));
                 });
             }
+
             @Override
             public void onError(Exception e) {
                 loadFromRoomAndYandex(lat, lon, true);
@@ -129,7 +152,7 @@ public class MapViewModel extends AndroidViewModel {
                                             // + нов места
                                             if (!newPlaces.isEmpty()) {
                                                 db.placeDAO().insertAll(newPlaces);
-                                                saveNewPlacesToFirestore(newPlaces);
+                                                saveNewPlacesToSupabase(newPlaces);
                                             }
 
                                             // для карты
@@ -161,18 +184,11 @@ public class MapViewModel extends AndroidViewModel {
         });
     }
 
-    private void saveNewPlacesToFirestore(List<Place> places) {
+    private void saveNewPlacesToSupabase(List<Place> places) {
         for (Place place : places) {
-            firestoreRepository.insert(place, new PlaceRepository.DataCallback<String>() {
-                @Override
-                public void onSuccess(String firestoreId) {
-                    // firestoreId установлен в place.setFirestoreId() внутри insert()
-                }
-
-                @Override
-                public void onError(Exception e) {
-                    // Ошибка Firestore не влияет на карту — Room уже записан
-                }
+            supabaseRepository.insert(place, new PlaceRepository.DataCallback<String>() {
+                @Override public void onSuccess(String id) { /* firestoreId установлен */ }
+                @Override public void onError(Exception e) { /* Room уже записан */ }
             });
         }
     }

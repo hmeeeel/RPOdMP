@@ -2,14 +2,14 @@
 plugins {
     alias(libs.plugins.android.application) apply false
 
-    id("com.google.gms.google-services") version "4.4.4" apply false
+   // id("com.google.gms.google-services") version "4.4.4" apply false
 }
 
-ext {
+/*ext {
     val properties = java.util.Properties()
     val localFile = rootProject.file("local.properties")
     if (localFile.exists()) {
         properties.load(localFile.inputStream())
     }
     extra["mapkitApiKey"] = properties.getProperty("MAPKIT_API_KEY", "")
-}
+}*/

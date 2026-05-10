@@ -31,10 +31,33 @@ public class SettingsManager {
     private static final String KEY_USER_EMAIL = "user_email";
     private static final String KEY_USER_NAME  = "user_name";
     private static final String KEY_LOGOUT_TIME = "logout_time";
+
+    private static final String KEY_ACCESS_TOKEN  = "supabase_access_token";
+    private static final String KEY_REFRESH_TOKEN = "supabase_refresh_token";
+    private static final String KEY_USER_ID       = "supabase_user_id";
     public SettingsManager(Context context) {
         this.preferences = context.getSharedPreferences("App", Context.MODE_PRIVATE);
     }
 
+    public void saveSession(String accessToken, String refreshToken, String userId) {
+        preferences.edit()
+                .putString(KEY_ACCESS_TOKEN,  accessToken)
+                .putString(KEY_REFRESH_TOKEN, refreshToken != null ? refreshToken : "")
+                .putString(KEY_USER_ID,       userId)
+                .apply();
+    }
+
+    public void clearSession() {
+        preferences.edit()
+                .remove(KEY_ACCESS_TOKEN)
+                .remove(KEY_REFRESH_TOKEN)
+                .remove(KEY_USER_ID)
+                .apply();
+    }
+
+    public String getAccessToken()  { return preferences.getString(KEY_ACCESS_TOKEN,  null); }
+    public String getRefreshToken() { return preferences.getString(KEY_REFRESH_TOKEN, null); }
+    public String getUserId()       { return preferences.getString(KEY_USER_ID,       null); }
     public void setLang(String language) {
         preferences.edit().putString("language", language).apply();
     }

@@ -9,10 +9,10 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
-import com.example.myapplication.data.firestore.FirestoreRepository;
 import com.example.myapplication.data.model.Place;
-import com.example.myapplication.data.repository.PlaceRepository;
-import com.google.firebase.firestore.ListenerRegistration;
+import com.example.myapplication.data.supabase.SupabaseClient;
+import com.example.myapplication.data.supabase.SupabaseRealtimeClient;
+import com.example.myapplication.data.supabase.SupabaseRepository;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -21,26 +21,23 @@ import java.util.Locale;
 
 public class MuseumViewModel extends AndroidViewModel {
 
-    public enum SortOption { NEWEST, OLDEST, AZ, ZA }
-
-    public enum FilterOption {
-        ALL(-1), VISITED(1), PLANNED(0);
+    public enum SortOption   { NEWEST, OLDEST, AZ, ZA }
+    public enum FilterOption { ALL(-1), VISITED(1), PLANNED(0);
         public final int value;
-        FilterOption(int value) { this.value = value; }
+        FilterOption(int v) { value = v; }
     }
 
     private static final String PREFS_NAME = "search_prefs";
     private static final String KEY_SORT   = "pref_sort";
     private static final String KEY_FILTER = "pref_filter";
 
-    private final FirestoreRepository repository;
-    private final SharedPreferences   prefs;
+    private final SupabaseRepository       repository;
+    private final SupabaseRealtimeClient   realtimeClient;
+    private final SharedPreferences        prefs;
 
-    private ListenerRegistration listenerRegistration;
-    private List<Place> allPlaces = new ArrayList<>();
-
-    private String       currentQuery  = "";
-    private SortOption   currentSort;
+    private List<Place> allPlaces    = new ArrayList<>();
+    private String      currentQuery = "";
+    private SortOption  currentSort;
     private FilterOption currentFilter;
 
     private final MutableLiveData<List<Place>> _places    = new MutableLiveData<>();
@@ -53,29 +50,34 @@ public class MuseumViewModel extends AndroidViewModel {
 
     public MuseumViewModel(@NonNull Application application) {
         super(application);
-        repository = FirestoreRepository.getInstance();
-        prefs      = application.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        repository     = SupabaseRepository.getInstance();
+        realtimeClient = new SupabaseRealtimeClient();
+        prefs          = application.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
 
-        String savedSort = prefs.getString(KEY_SORT, SortOption.NEWEST.name());
-        try { currentSort = SortOption.valueOf(savedSort); }
-        catch (IllegalArgumentException e) { currentSort = SortOption.NEWEST; }
+        try { currentSort   = SortOption.valueOf(prefs.getString(KEY_SORT, SortOption.NEWEST.name())); }
+        catch (Exception e) { currentSort = SortOption.NEWEST; }
+        try { currentFilter = FilterOption.valueOf(prefs.getString(KEY_FILTER, FilterOption.ALL.name())); }
+        catch (Exception e) { currentFilter = FilterOption.ALL; }
 
-        String savedFilter = prefs.getString(KEY_FILTER, FilterOption.ALL.name());
-        try { currentFilter = FilterOption.valueOf(savedFilter); }
-        catch (IllegalArgumentException e) { currentFilter = FilterOption.ALL; }
-
-        subscribeToFirestore();
+        subscribeToSupabase();
     }
 
-    private void subscribeToFirestore() {
+    private void subscribeToSupabase() {
         _isLoading.setValue(true);
+        String userId = SupabaseClient.getInstance().getUserId();
+        if (userId == null) {
+            _isLoading.setValue(false);
+            _error.setValue("Пользователь не авторизован");
+            return;
+        }
 
-        listenerRegistration = repository.observeAll(new PlaceRepository.DataCallback<List<Place>>() {
+        realtimeClient.subscribe(userId, new SupabaseRealtimeClient.RealtimeDataCallback() {
+
             @Override
-            public void onSuccess(List<Place> data) {
-                allPlaces = data;
+            public void onData(List<Place> data) {
+                allPlaces = data != null ? data : new ArrayList<>();
                 _isLoading.setValue(false);
-                applyFilterSortSearch(); // обновляем UI
+                applyFilterSortSearch();
             }
 
             @Override
@@ -86,160 +88,111 @@ public class MuseumViewModel extends AndroidViewModel {
         });
     }
 
+    // loadMuseums теперь принудительно идёт на сервер
     public void loadMuseums() {
+        realtimeClient.refresh();
+    }
+
+   // public void loadMuseums() { applyFilterSortSearch(); }
+
+    public void setQuery(String q) {
+        currentQuery = q != null ? q.trim() : "";
         applyFilterSortSearch();
     }
 
-    public void setQuery(String query) {
-        currentQuery = query != null ? query.trim() : "";
+    public void setSort(SortOption s) {
+        currentSort = s;
+        prefs.edit().putString(KEY_SORT, s.name()).apply();
         applyFilterSortSearch();
     }
 
-    public void setSort(SortOption sort) {
-        currentSort = sort;
-        prefs.edit().putString(KEY_SORT, sort.name()).apply();
+    public void setFilter(FilterOption f) {
+        currentFilter = f;
+        prefs.edit().putString(KEY_FILTER, f.name()).apply();
         applyFilterSortSearch();
     }
 
-    public void setFilter(FilterOption filter) {
-        currentFilter = filter;
-        prefs.edit().putString(KEY_FILTER, filter.name()).apply();
-        applyFilterSortSearch();
-    }
-
-    // Фильтрация, поиск и сортировка выполняются в памяти
     private void applyFilterSortSearch() {
-        // 1. Фильтр по статусу
         List<Place> filtered = new ArrayList<>();
         for (Place p : allPlaces) {
-            if (currentFilter == FilterOption.ALL) {
-                filtered.add(p);
-            } else if (currentFilter == FilterOption.VISITED && p.isVisited()) {
-                filtered.add(p);
-            } else if (currentFilter == FilterOption.PLANNED && !p.isVisited()) {
-                filtered.add(p);
-            }
+            if (currentFilter == FilterOption.ALL) filtered.add(p);
+            else if (currentFilter == FilterOption.VISITED  &&  p.isVisited()) filtered.add(p);
+            else if (currentFilter == FilterOption.PLANNED  && !p.isVisited()) filtered.add(p);
         }
-
-        // 2. Поиск по запросу
-        List<Place> searched;
-        if (currentQuery.isEmpty()) {
-            searched = filtered;
-        } else {
-            searched = likeSearch(currentQuery, filtered);
-            if (searched.isEmpty()) {
-                searched = fuzzySearch(currentQuery, filtered);
-            }
-        }
-
-        // 3. Сортировка
+        List<Place> searched = currentQuery.isEmpty() ? filtered : search(currentQuery, filtered);
         sort(searched);
-
         _places.setValue(searched);
+    }
+
+    private List<Place> search(String q, List<Place> src) {
+        List<Place> r = likeSearch(q, src);
+        return r.isEmpty() ? fuzzySearch(q, src) : r;
     }
 
     private List<Place> likeSearch(String query, List<Place> source) {
         String lq = query.toLowerCase(Locale.getDefault());
-        List<Place> result = new ArrayList<>();
-        for (Place p : source) {
-            if (contains(p.getName(), lq)
-                    || contains(p.getAddress(), lq)
-                    || contains(p.getDescription(), lq)) {
-                result.add(p);
-            }
-        }
-        return result;
+        List<Place> r = new ArrayList<>();
+        for (Place p : source)
+            if (contains(p.getName(), lq) || contains(p.getAddress(), lq) || contains(p.getDescription(), lq))
+                r.add(p);
+        return r;
     }
 
-    private boolean contains(String field, String query) {
-        return field != null && field.toLowerCase(Locale.getDefault()).contains(query);
+    private boolean contains(String field, String q) {
+        return field != null && field.toLowerCase(Locale.getDefault()).contains(q);
     }
 
     private List<Place> fuzzySearch(String query, List<Place> source) {
         String lq = query.toLowerCase(Locale.getDefault());
-        List<Place> result = new ArrayList<>();
-        for (Place p : source) {
-            if (fuzzyMatch(lq, p)) result.add(p);
-        }
-        return result;
+        List<Place> r = new ArrayList<>();
+        for (Place p : source) if (fuzzyMatch(lq, p)) r.add(p);
+        return r;
     }
 
-    private boolean fuzzyMatch(String query, Place place) {
-        if (place.getName() == null || place.getName().isEmpty()) return false;
-        String[] words = place.getName().toLowerCase(Locale.getDefault()).split("\\s+");
-        for (String word : words) {
-            if (levenshtein(query, word) <= 2) return true;
-        }
+    private boolean fuzzyMatch(String q, Place p) {
+        if (p.getName() == null) return false;
+        for (String w : p.getName().toLowerCase(Locale.getDefault()).split("\\s+"))
+            if (levenshtein(q, w) <= 2) return true;
         return false;
     }
 
-    private int levenshtein(String str1, String str2) {
-        int[] Di_1 = new int[str2.length() + 1];
-        int[] Di = new int[str2.length() + 1];
-
-        for (int j = 0; j <= str2.length(); j++) {
-            Di[j] = j;
-        }
-
-        for (int i = 1; i <= str1.length(); i++) {
-            System.arraycopy(Di, 0, Di_1, 0, Di_1.length);
-
-            Di[0] = i; // (j == 0)
-            for (int j = 1; j <= str2.length(); j++) {
-                int cost = (str1.charAt(i - 1) != str2.charAt(j - 1)) ? 1 : 0;
-                Di[j] = min(
-                        Di_1[j] + 1,       // удаление
-                        Di[j - 1] + 1,     // вставка
-                        Di_1[j - 1] + cost // замена
-                );
+    private int levenshtein(String a, String b) {
+        int[] prev = new int[b.length() + 1], curr = new int[b.length() + 1];
+        for (int j = 0; j <= b.length(); j++) curr[j] = j;
+        for (int i = 1; i <= a.length(); i++) {
+            System.arraycopy(curr, 0, prev, 0, curr.length);
+            curr[0] = i;
+            for (int j = 1; j <= b.length(); j++) {
+                int cost = a.charAt(i-1) != b.charAt(j-1) ? 1 : 0;
+                curr[j] = Math.min(Math.min(prev[j]+1, curr[j-1]+1), prev[j-1]+cost);
             }
         }
+        return curr[b.length()];
+    }
 
-        return Di[Di.length - 1];
-    }
-    private int min(int n1, int n2, int n3) {
-        return Math.min(Math.min(n1, n2), n3);
-    }
     private void sort(List<Place> list) {
         switch (currentSort) {
-            case NEWEST:
-                Collections.sort(list, (a, b) -> Long.compare(b.getCreatedAt(), a.getCreatedAt()));
-                break;
-            case OLDEST:
-                Collections.sort(list, (a, b) -> Long.compare(a.getCreatedAt(), b.getCreatedAt()));
-                break;
-            case AZ:
-                Collections.sort(list, (a, b) -> {
-                    String na = a.getName() != null ? a.getName().toLowerCase(Locale.getDefault()) : "";
-                    String nb = b.getName() != null ? b.getName().toLowerCase(Locale.getDefault()) : "";
-                    return na.compareTo(nb);
-                });
-                break;
-            case ZA:
-                Collections.sort(list, (a, b) -> {
-                    String na = a.getName() != null ? a.getName().toLowerCase(Locale.getDefault()) : "";
-                    String nb = b.getName() != null ? b.getName().toLowerCase(Locale.getDefault()) : "";
-                    return nb.compareTo(na);
-                });
-                break;
+            case NEWEST: Collections.sort(list, (a,b) -> Long.compare(b.getCreatedAt(), a.getCreatedAt())); break;
+            case OLDEST: Collections.sort(list, (a,b) -> Long.compare(a.getCreatedAt(), b.getCreatedAt())); break;
+            case AZ: Collections.sort(list, (a,b) -> name(a).compareTo(name(b))); break;
+            case ZA: Collections.sort(list, (a,b) -> name(b).compareTo(name(a))); break;
         }
+    }
+
+    private String name(Place p) {
+        return p.getName() != null ? p.getName().toLowerCase(Locale.getDefault()) : "";
     }
 
     public void deletePlace(Place place) {
-        repository.delete(place.getFirestoreId(), new PlaceRepository.DataCallback<Void>() {
-            @Override
-            public void onSuccess(Void v) {}
-            @Override
-            public void onError(Exception e) { _error.setValue(e.getMessage()); }
+        repository.delete(place.getFirestoreId(), new com.example.myapplication.data.repository.PlaceRepository.DataCallback<Void>() {
+            @Override public void onSuccess(Void v) {}
+            @Override public void onError(Exception e) { _error.setValue(e.getMessage()); }
         });
     }
 
-    @Override
-    protected void onCleared() {
+    @Override protected void onCleared() {
         super.onCleared();
-        if (listenerRegistration != null) {
-            listenerRegistration.remove();
-        }
+        realtimeClient.remove();
     }
 
     public String       getCurrentQuery()  { return currentQuery; }

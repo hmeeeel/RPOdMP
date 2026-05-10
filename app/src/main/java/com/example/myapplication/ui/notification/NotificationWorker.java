@@ -14,12 +14,12 @@ import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
 import com.example.myapplication.R;
-import com.example.myapplication.data.firestore.FirestoreRepository;
 import com.example.myapplication.data.model.Place;
 import com.example.myapplication.data.repository.PlaceRepository;
+import com.example.myapplication.data.supabase.SupabaseClient;
+import com.example.myapplication.data.supabase.SupabaseRepository;
 import com.example.myapplication.ui.main.MainActivity;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
+import com.example.myapplication.ui.settings.SettingsManager;
 
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -29,8 +29,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class NotificationWorker extends Worker {
 
     public static final String CHANNEL_ID = "museum_reminders";
-    private static final int NOTIFICATION_ID = 1001;
-    private static final String TAG = "NotificationWorker";
+    private static final int   NOTIF_ID   = 1001;
+    private static final String TAG        = "NotificationWorker";
 
     public NotificationWorker(Context context, WorkerParameters params) {
         super(context, params);
@@ -39,101 +39,65 @@ public class NotificationWorker extends Worker {
     @NonNull
     @Override
     public Result doWork() {
-        Context context = getApplicationContext();
+        Context ctx = getApplicationContext();
 
-        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-
-        if (currentUser == null) {
-            Log.d(TAG, "Пользователь не залогинен - уведомление не отправляется");
+        // Восстановить сессию из SharedPreferences
+        SettingsManager sm = new SettingsManager(ctx);
+        String token  = sm.getAccessToken();
+        String userId = sm.getUserId();
+        if (token == null || userId == null) {
+            Log.d(TAG, "No session — skipping notification");
             return Result.success();
         }
+        SupabaseClient.getInstance().setSession(token, sm.getRefreshToken(), userId);
 
-        Log.d(TAG, "Проверка непосещённых мест для пользователя: " + currentUser.getEmail());
+        int count = countUnvisited();
+        if (count == 0) return Result.success();
 
-        int unvisitedCount = countUnvisitedPlacesFromFirestore(context);
-
-        if (unvisitedCount == 0) {
-            Log.d(TAG, "Нет непосещённых мест");
-            return Result.success();
-        }
-
-        PendingIntent pendingIntent = buildPendingIntent(context);
-        sendNotification(context, unvisitedCount, pendingIntent);
-
-        Log.d(TAG, "Уведомление отправлено: " + unvisitedCount + " мест");
+        sendNotification(ctx, count, buildPendingIntent(ctx));
         return Result.success();
     }
 
-    private int countUnvisitedPlacesFromFirestore(Context context) {
+    private int countUnvisited() {
         AtomicInteger count = new AtomicInteger(0);
         CountDownLatch latch = new CountDownLatch(1);
 
-        FirestoreRepository repository = FirestoreRepository.getInstance();
-
-        repository.getAll(new PlaceRepository.DataCallback<List<Place>>() {
-            @Override
-            public void onSuccess(List<Place> places) {
-                int unvisited = 0;
-                for (Place place : places) {
-                    if (!place.isVisited()) {
-                        unvisited++;
-                    }
-                }
-                count.set(unvisited);
+        SupabaseRepository.getInstance().getAll(new PlaceRepository.DataCallback<List<Place>>() {
+            @Override public void onSuccess(List<Place> places) {
+                for (Place p : places) if (!p.isVisited()) count.incrementAndGet();
                 latch.countDown();
             }
-
-            @Override
-            public void onError(Exception e) {
-                Log.e(TAG, "Ошибка загрузки мест из Firestore", e);
+            @Override public void onError(Exception e) {
+                Log.e(TAG, "getAll error", e);
                 latch.countDown();
             }
         });
 
-        try {
-            latch.await(10, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            Log.e(TAG, "Timeout при загрузке данных", e);
-        }
-
+        try { latch.await(15, TimeUnit.SECONDS); } catch (InterruptedException ignored) {}
         return count.get();
     }
 
-    private PendingIntent buildPendingIntent(Context context) {
-        Intent openAppIntent = new Intent(context, MainActivity.class);
-        openAppIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-
-        TaskStackBuilder stackBuilder = TaskStackBuilder.create(context);
-        stackBuilder.addNextIntentWithParentStack(openAppIntent);
-
+    private PendingIntent buildPendingIntent(Context ctx) {
+        Intent intent = new Intent(ctx, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        TaskStackBuilder stack = TaskStackBuilder.create(ctx);
+        stack.addNextIntentWithParentStack(intent);
         int flags = PendingIntent.FLAG_UPDATE_CURRENT;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            flags |= PendingIntent.FLAG_IMMUTABLE;
-        }
-
-        return stackBuilder.getPendingIntent(0, flags);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) flags |= PendingIntent.FLAG_IMMUTABLE;
+        return stack.getPendingIntent(0, flags);
     }
 
-    private void sendNotification(Context context, int unvisitedCount, PendingIntent pendingIntent) {
-        String text = context.getResources().getQuantityString(
-                R.plurals.notification_text,
-                unvisitedCount,
-                unvisitedCount
-        );
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
+    private void sendNotification(Context ctx, int count, PendingIntent pi) {
+        String text = ctx.getResources().getQuantityString(R.plurals.notification_text, count, count);
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(ctx, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_home_24dp)
-                .setContentTitle(context.getString(R.string.notification_title))
+                .setContentTitle(ctx.getString(R.string.notification_title))
                 .setContentText(text)
-                .setContentIntent(pendingIntent)
+                .setContentIntent(pi)
                 .setAutoCancel(true)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT);
 
-        NotificationManager manager = (NotificationManager)
-                context.getSystemService(Context.NOTIFICATION_SERVICE);
-
-        if (manager != null) {
-            manager.notify(NOTIFICATION_ID, builder.build());
-        }
+        NotificationManager mgr = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (mgr != null) mgr.notify(NOTIF_ID, builder.build());
     }
 }

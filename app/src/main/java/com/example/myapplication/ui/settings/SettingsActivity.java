@@ -22,7 +22,7 @@ import androidx.core.content.ContextCompat;
 
 import com.example.myapplication.R;
 import com.example.myapplication.data.db.MuseumDB;
-import com.example.myapplication.data.firestore.FirestoreRepository;
+
 import com.example.myapplication.data.model.Place;
 import com.example.myapplication.data.repository.PlaceRepository;
 import com.example.myapplication.ui.add.AddMuseumActivity;
@@ -179,17 +179,12 @@ public class SettingsActivity extends BaseActivity {
     }
 
     private void performLogout() {
-        settingsManager.saveLogoutTime(System.currentTimeMillis()); // для 7-дневного бездействия
-
+        settingsManager.saveLogoutTime(System.currentTimeMillis());
         AuthManager.getInstance().signOut();
-
-        new Thread(() -> {
-            com.example.myapplication.data.db.MuseumDB.getInstance(this)
-                    .clearAllTables();
-        }).start();
-
-        Intent intent = new Intent(this,
-                com.example.myapplication.ui.auth.LoginActivity.class);
+        settingsManager.clearSession();            // ← очистить Supabase токены
+        new Thread(() -> com.example.myapplication.data.db.MuseumDB
+                .getInstance(this).clearAllTables()).start();
+        Intent intent = new Intent(this, LoginActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
@@ -240,42 +235,33 @@ public class SettingsActivity extends BaseActivity {
     private void reauthAndDelete(String email, String password) {
         AuthManager.getInstance().reauthenticate(email, password, new AuthManager.AuthCallback() {
             @Override
-            public void onSuccess(com.google.firebase.auth.FirebaseUser user) {
-                FirestoreRepository repo = FirestoreRepository.getInstance();
-                repo.getAll(new PlaceRepository.DataCallback<java.util.List<Place>>() {
-                    @Override
-                    public void onSuccess(java.util.List<Place> places) {
-                        for (Place p : places) {
-                            if (p.getFirestoreId() != null)
-                                repo.delete(p.getFirestoreId(), new PlaceRepository.DataCallback<Void>() {
-                                    public void onSuccess(Void v) {}
-                                    public void onError(Exception e) {}
+            public void onSuccess(com.example.myapplication.data.supabase.SupabaseUser user) {
+                // 1. Удалить все данные пользователя из Supabase
+                com.example.myapplication.data.supabase.SupabaseRepository.getInstance()
+                        .deleteAll(new PlaceRepository.DataCallback<Void>() {
+                            @Override public void onSuccess(Void v) {
+                                // 2. Удалить аккаунт и выйти
+                                AuthManager.getInstance().deleteAccount(new AuthManager.AuthCallback() {
+                                    @Override public void onSuccess(com.example.myapplication.data.supabase.SupabaseUser u) {
+                                        settingsManager.clearUserProfile();
+                                        settingsManager.clearSession();
+                                        new Thread(() -> MuseumDB.getInstance(SettingsActivity.this)
+                                                .clearAllTables()).start();
+                                        Intent intent = new Intent(SettingsActivity.this, LoginActivity.class);
+                                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                        startActivity(intent);
+                                    }
+                                    @Override public void onError(Exception e) {
+                                        Toast.makeText(SettingsActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
+                                    }
                                 });
-                        }
-                        AuthManager.getInstance().deleteAccount(new AuthManager.AuthCallback() {
-                            @Override
-                            public void onSuccess(com.google.firebase.auth.FirebaseUser u) {
-                                settingsManager.clearUserProfile();
-                                new Thread(() -> MuseumDB.getInstance(SettingsActivity.this)
-                                        .clearAllTables()).start();
-                                Intent intent = new Intent(SettingsActivity.this, LoginActivity.class);
-                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                                startActivity(intent);
                             }
-                            @Override
-                            public void onError(Exception e) {
-                                Toast.makeText(SettingsActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
-                            }
+                            @Override public void onError(Exception e) { /* продолжаем */ }
                         });
-                    }
-                    @Override
-                    public void onError(Exception e) { /* Firestore недоступен - всё равно удаляем аккаунт */ }
-                });
             }
             @Override
             public void onError(Exception e) {
-                Toast.makeText(SettingsActivity.this,
-                        getString(R.string.error_reauth), Toast.LENGTH_LONG).show();
+                Toast.makeText(SettingsActivity.this, getString(R.string.error_reauth), Toast.LENGTH_LONG).show();
             }
         });
     }

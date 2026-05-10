@@ -27,7 +27,7 @@ import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
-import com.google.firebase.Firebase;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -261,7 +261,7 @@ public class MainActivity extends BaseActivity implements IMuseumClick {
     @Override
     protected void onResume() {
         super.onResume();
-        viewModel.loadMuseums();
+        viewModel.loadMuseums(); // теперь всегда идёт на сервер
 
         applySortToChips(viewModel.getCurrentSort());
         applyFilterToChips(viewModel.getCurrentFilter());
