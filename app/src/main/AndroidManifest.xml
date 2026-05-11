@@ -53,6 +53,11 @@
 
         <activity android:name=".ui.map.MapActivity" />
 
+        <activity
+            android:name=".ui.routes.CreateRouteActivity"
+            android:parentActivityName=".ui.main.MainActivity" />
+
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

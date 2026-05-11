@@ -20,4 +20,7 @@
     <color name="border_dark">#424242</color>
 
     <color name="error_red">#B00020</color>
+
+    <color name="selection_highlight">#202121</color>
+    <color name="selection_highlight_dark">#1E3A5F</color>
 </resources>

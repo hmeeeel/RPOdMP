@@ -143,4 +143,34 @@
 
     <string name="share">Share</string>
     <string name="share_via">Share via…</string>
+
+    <string name="create_route">Create Route</string>
+    <string name="selected_count">Selected: %d</string>
+    <string name="select_at_least_two">Select at least 2 places</string>
+
+    <string name="route_info">Basic Information</string>
+    <string name="route_title">Route Title *</string>
+    <string name="route_description">Description (optional)</string>
+    <string name="route_category">Category</string>
+    <string name="route_points">Route Points</string>
+    <string name="view_on_map">View on Map</string>
+    <string name="drag_to_reorder">Hold and drag to reorder</string>
+    <string name="route_empty_state">Route cannot be empty</string>
+    <string name="route_privacy">Privacy Settings</string>
+    <string name="make_public">Make Public</string>
+    <string name="make_public_hint">Public routes are moderated and visible to all users</string>
+    <string name="drag_handle">Drag</string>
+    <string name="remove_point">Remove point</string>
+    <string name="route_saved">Route saved</string>
+    <string name="error_route_title">Enter route title</string>
+    <string name="error_route_points">Add at least 2 points</string>
+
+    <string-array name="route_categories">
+        <item>Historical</item>
+        <item>Gastronomic</item>
+        <item>Nature</item>
+        <item>Cultural</item>
+        <item>Entertainment</item>
+    </string-array>
+
 </resources>

@@ -2,12 +2,15 @@ package com.example.myapplication.ui.main;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProvider;
@@ -21,6 +24,7 @@ import com.example.myapplication.ui.add.AddMuseumActivity;
 import com.example.myapplication.ui.detail.IMuseumClick;
 import com.example.myapplication.ui.detail.MuseumDetailActivity;
 import com.example.myapplication.ui.map.MapActivity;
+import com.example.myapplication.ui.routes.CreateRouteActivity;
 import com.example.myapplication.ui.settings.SettingsActivity;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.chip.Chip;
@@ -28,9 +32,9 @@ import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
-
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class MainActivity extends BaseActivity implements IMuseumClick {
 
@@ -45,9 +49,11 @@ public class MainActivity extends BaseActivity implements IMuseumClick {
     private Chip chipNewest, chipOldest, chipAZ, chipZA, chipAll, chipVisited, chipPlanned;
 
     private TextView textEmpty;
-
     private boolean updatingChips = false;
-
+    private boolean isSelectionMode = false;
+    private Menu currentMenu;
+    private Toolbar toolbar;
+    private ActivityResultLauncher<Intent> createRouteLauncher;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -62,10 +68,22 @@ public class MainActivity extends BaseActivity implements IMuseumClick {
         setupChips();
         observeData();
         setupNetworkMonitoring();
+
+        createRouteLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+
+                    if (result.getResultCode() == RESULT_OK) {
+                        exitSelectionMode(); // очистка когда маршрут сохр
+                    }
+
+                    // Если RESULT_CANCELED - выбор сохраняется
+                }
+        );
     }
 
     private void setupToolBar() {
-        Toolbar toolbar = findViewById(R.id.toolbar);
+        toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayShowTitleEnabled(false);
@@ -74,56 +92,144 @@ public class MainActivity extends BaseActivity implements IMuseumClick {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+        currentMenu = menu;
+
+        if (isSelectionMode) {
+            getMenuInflater().inflate(R.menu.menu_selection, menu);
+            updateSelectionTitle(museumAdapter.getSelectedPlaceIds().size());
+            return true;
+        }
+
         getMenuInflater().inflate(R.menu.toolbar_menu, menu);
 
         MenuItem searchItem = menu.findItem(R.id.search);
         SearchView searchView = (SearchView) searchItem.getActionView();
 
-        if (searchView == null) return true;
+        if (searchView != null) {
+            searchView.setQueryHint(getString(R.string.search_hint));
+            searchView.setMaxWidth(Integer.MAX_VALUE);
 
-        searchView.setQueryHint(getString(R.string.search_hint));
-        searchView.setMaxWidth(Integer.MAX_VALUE);
-
-        String savedQuery = viewModel.getCurrentQuery();
-        if (savedQuery != null && !savedQuery.isEmpty()) {
-            searchItem.expandActionView();          // разв поле ввода
-            searchView.setQuery(savedQuery, false); // false = не отправлять submit
-            searchView.clearFocus();                // уб клавиатуру
-        }
-
-        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-            @Override
-            public boolean onQueryTextSubmit(String query) {
+            String savedQuery = viewModel.getCurrentQuery();
+            if (savedQuery != null && !savedQuery.isEmpty()) {
+                searchItem.expandActionView();
+                searchView.setQuery(savedQuery, false);
                 searchView.clearFocus();
-                return true;
             }
 
-            @Override
-            public boolean onQueryTextChange(String newText) {
-                viewModel.setQuery(newText);
-                return true;
-            }
-        });
+            searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+                @Override
+                public boolean onQueryTextSubmit(String query) {
+                    searchView.clearFocus();
+                    return true;
+                }
 
-        searchItem.setOnActionExpandListener(new MenuItem.OnActionExpandListener() {
-            @Override
-            public boolean onMenuItemActionExpand(MenuItem item) {
-                return true;
-            }
+                @Override
+                public boolean onQueryTextChange(String newText) {
+                    viewModel.setQuery(newText);
+                    return true;
+                }
+            });
 
-            @Override
-            public boolean onMenuItemActionCollapse(MenuItem item) {
-                viewModel.setQuery("");
-                return true;
-            }
-        });
+            searchItem.setOnActionExpandListener(new MenuItem.OnActionExpandListener() {
+                @Override
+                public boolean onMenuItemActionExpand(MenuItem item) {
+                    return true;
+                }
+
+                @Override
+                public boolean onMenuItemActionCollapse(MenuItem item) {
+                    viewModel.setQuery("");
+                    return true;
+                }
+            });
+        }
 
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == android.R.id.home) {
+            exitSelectionMode();
+            return true;
+        } else if (id == R.id.action_create_route) {
+            createRouteFromSelection();
+            return true;
+        }
+
         return super.onOptionsItemSelected(item);
+    }
+
+    private void exitSelectionMode() {
+        isSelectionMode = false;
+        museumAdapter.clearSelectionSilently();
+        invalidateOptionsMenu();
+
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+            getSupportActionBar().setTitle("");
+        }
+    }
+
+    private void enterSelectionMode() {
+        isSelectionMode = true;
+        invalidateOptionsMenu();
+
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setHomeAsUpIndicator(R.drawable.ic_close_24dp);
+        }
+    }
+
+    private void updateSelectionTitle(int count) {
+        if (getSupportActionBar() != null && isSelectionMode) {
+            getSupportActionBar().setTitle(getString(R.string.selected_count, count));
+        }
+    }
+
+    private void createRouteFromSelection() {
+        Set<Long> selectedIds = museumAdapter.getSelectedPlaceIds();
+
+        Log.e("DEBUG_SELECT", "=====================================");
+        Log.e("DEBUG_SELECT", "Selection mode: " + museumAdapter.isSelectionMode());
+        Log.e("DEBUG_SELECT", "Selected IDs size: " + selectedIds.size());
+
+        if (selectedIds.isEmpty()) {
+            Log.e("DEBUG_SELECT", "No places selected at all!");
+            Toast.makeText(this, "Вы не выбрали ни одного места! Долгое нажатие для выбора", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        int i = 0;
+        for (Long id : selectedIds) {
+            Log.e("DEBUG_SELECT", "Selected[" + i++ + "]: " + id);
+        }
+
+        if (selectedIds.size() < 2) {
+            Log.e("DEBUG_SELECT", "Only " + selectedIds.size() + " place(s) selected, need 2+");
+            Toast.makeText(this, "Выбрано " + selectedIds.size() + " мест. Нужно минимум 2", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        Log.e("DEBUG_SELECT", "SUCCESS! Opening CreateRouteActivity...");
+
+        Intent intent = new Intent(this, CreateRouteActivity.class);
+        ArrayList<Long> idsList = new ArrayList<>(selectedIds);
+        intent.putExtra("selected_place_ids", idsList);
+       // startActivity(intent);
+       // exitSelectionMode();
+
+        createRouteLauncher.launch(intent);
+    }
+    @Override
+    public void onBackPressed() {
+        if (isSelectionMode) {
+            exitSelectionMode();
+        } else {
+            super.onBackPressed();
+        }
     }
 
     private void setupChips() {
@@ -140,7 +246,6 @@ public class MainActivity extends BaseActivity implements IMuseumClick {
 
         textEmpty = findViewById(R.id.textEmpty);
 
-        // из SharedPreferences
         applySortToChips(viewModel.getCurrentSort());
         applyFilterToChips(viewModel.getCurrentFilter());
 
@@ -165,6 +270,7 @@ public class MainActivity extends BaseActivity implements IMuseumClick {
             else if (id == R.id.chipPlanned) viewModel.setFilter(MuseumViewModel.FilterOption.PLANNED);
         });
     }
+
     private void applySortToChips(MuseumViewModel.SortOption sort) {
         updatingChips = true;
         chipNewest.setChecked(sort == MuseumViewModel.SortOption.NEWEST);
@@ -194,8 +300,7 @@ public class MainActivity extends BaseActivity implements IMuseumClick {
 
         viewModel.error.observe(this, errorMsg -> {
             if (errorMsg != null) {
-                Toast.makeText(this,
-                        getString(R.string.error_load) + errorMsg,
+                Toast.makeText(this, getString(R.string.error_load) + errorMsg,
                         Toast.LENGTH_SHORT).show();
             }
         });
@@ -218,7 +323,31 @@ public class MainActivity extends BaseActivity implements IMuseumClick {
 
     private void setupRecyclerView() {
         RecyclerView recView = findViewById(R.id.recView);
-        museumAdapter = new MuseumAdapter(this, places, this); // List<Place>
+        museumAdapter = new MuseumAdapter(this, places, this);
+
+        museumAdapter.setSelectionModeListener(new MuseumAdapter.SelectionModeListener() {
+            @Override
+            public void onSelectionChanged(int count) {
+                updateSelectionTitle(count);
+                if (currentMenu != null) {
+                    MenuItem createItem = currentMenu.findItem(R.id.action_create_route);
+                    if (createItem != null) {
+                        createItem.setEnabled(count >= 2);
+                        createItem.getIcon().setAlpha(count >= 2 ? 255 : 128);
+                    }
+                }
+            }
+
+            @Override
+            public void onSelectionModeToggled(boolean enabled) {
+                if (enabled) {
+                    enterSelectionMode();
+                } else {
+                    exitSelectionMode(); // теперь вызывает clearSelectionSilently()
+                }
+            }
+        });
+
         recView.setLayoutManager(new LinearLayoutManager(this));
         recView.setAdapter(museumAdapter);
     }
@@ -253,6 +382,8 @@ public class MainActivity extends BaseActivity implements IMuseumClick {
 
     @Override
     public void onMuseumClick(Place place) {
+        if (isSelectionMode) return;
+
         Intent intent = new Intent(this, MuseumDetailActivity.class);
         intent.putExtra("place", place);
         startActivity(intent);
@@ -261,7 +392,7 @@ public class MainActivity extends BaseActivity implements IMuseumClick {
     @Override
     protected void onResume() {
         super.onResume();
-        viewModel.loadMuseums(); // теперь всегда идёт на сервер
+        viewModel.loadMuseums();
 
         applySortToChips(viewModel.getCurrentSort());
         applyFilterToChips(viewModel.getCurrentFilter());

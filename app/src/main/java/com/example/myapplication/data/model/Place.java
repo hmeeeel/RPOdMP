@@ -18,7 +18,7 @@ public class Place implements Parcelable {
     public static final String SOURCE_MANUAL = "MANUAL";
     public static final String SOURCE_YANDEX = "YANDEX";
     @PrimaryKey(autoGenerate = true)
-    private int id;
+    private long id;
     private String name;
 
     // Поля из Яндекса
@@ -85,8 +85,8 @@ public class Place implements Parcelable {
         if (!hasCoordinates()) return "";
         return String.format("%.4f, %.4f", latitude, longitude);
     }
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
+    public long getId() { return id; }
+    public void setId(long id) { this.id = id; }
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
@@ -138,7 +138,7 @@ public class Place implements Parcelable {
     public void setFirestoreId(String firestoreId) { this.firestoreId = firestoreId; }
 
     protected Place(Parcel in) {
-        id = in.readInt();
+        id = in.readLong();
         name = in.readString();
         address = in.readString();
         phone = in.readString();
@@ -160,7 +160,7 @@ public class Place implements Parcelable {
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
-        dest.writeInt(id);
+        dest.writeLong(id);
         dest.writeString(name);
         dest.writeString(address);
         dest.writeString(phone);

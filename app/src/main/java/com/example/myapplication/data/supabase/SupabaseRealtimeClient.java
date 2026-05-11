@@ -22,14 +22,14 @@ import okhttp3.WebSocketListener;
 
 public class SupabaseRealtimeClient {
 
-    private static final String TAG = "SupabaseRealtime";
-    private static final long HEARTBEAT_MS = 25_000;
-    private static final long RECONNECT_DELAY_MS = 5_000;
+    private static final String TAG              = "SupabaseRealtime";
+    private static final long   HEARTBEAT_MS     = 25_000;
+    private static final long   RECONNECT_DELAY_MS = 5_000;
 
     private WebSocket webSocket;
     private Timer heartbeatTimer;
     private final AtomicInteger refCount = new AtomicInteger(0);
-    private volatile boolean active = false;
+    private volatile boolean    active   = false;
     private RealtimeDataCallback callback;
     private String userId;
 
@@ -45,19 +45,14 @@ public class SupabaseRealtimeClient {
         this.callback = callback;
         this.active   = true;
 
-        // 1. Немедленная начальная загрузка данных
         fetchAll();
-
-        // 2. Открыть WebSocket для realtime обновлений
         connectWebSocket();
     }
 
-    // после add/update/delete
     public void refresh() {
         fetchAll();
     }
 
-    // Отписка
     public void remove() {
         active   = false;
         callback = null;
@@ -84,9 +79,7 @@ public class SupabaseRealtimeClient {
                 + "?apikey=" + SupabaseClient.SUPABASE_ANON_KEY
                 + "&vsn=1.0.0";
 
-        Request request = new Request.Builder()
-                .url(wsUrl)
-                .build();
+        Request request = new Request.Builder().url(wsUrl).build();
 
         webSocket = SupabaseClient.getInstance().getHttpClient()
                 .newWebSocket(request, new WebSocketListener() {
@@ -106,33 +99,30 @@ public class SupabaseRealtimeClient {
 
                     @Override
                     public void onClosing(WebSocket ws, int code, String reason) {
-                        Log.d(TAG, "WebSocket closing: " + code + " " + reason);
                         ws.close(1000, null);
                         stopHeartbeat();
                     }
 
                     @Override
                     public void onFailure(WebSocket ws, Throwable t, Response response) {
-                        Log.w(TAG, "WebSocket failure: " + t.getMessage()
-                                + (response != null ? " code=" + response.code() : ""));
+                        Log.w(TAG, "WebSocket failure: " + t.getMessage());
                         stopHeartbeat();
-                        // Переподключение через 5 секунд
                         if (active) {
-                            mainHandler.postDelayed(() -> connectWebSocket(), RECONNECT_DELAY_MS);
+                            mainHandler.postDelayed(
+                                    SupabaseRealtimeClient.this::connectWebSocket,
+                                    RECONNECT_DELAY_MS);
                         }
                     }
                 });
     }
 
-
     private void handleMessage(String text) {
         try {
-            JSONObject msg = new JSONObject(text);
-            String event   = msg.optString("event", "");
+            JSONObject msg   = new JSONObject(text);
+            String     event = msg.optString("event", "");
 
             switch (event) {
-                case "phx_reply":
-                    // Ответ на join — проверяем успех
+                case "phx_reply": // status - ok
                     JSONObject payload = msg.optJSONObject("payload");
                     if (payload != null) {
                         String status = payload.optString("status", "");
@@ -143,8 +133,7 @@ public class SupabaseRealtimeClient {
                     }
                     break;
 
-                case "postgres_changes":
-                    // Изменение в таблице — перезагрузить данные
+                case "postgres_changes": // INSERT/UPDATE/DELETE
                     Log.d(TAG, "postgres_changes detected, refreshing...");
                     fetchAll();
                     break;
@@ -152,22 +141,17 @@ public class SupabaseRealtimeClient {
                 case "phx_error":
                     Log.w(TAG, "phx_error received, reconnecting...");
                     if (active) {
-                        mainHandler.postDelayed(() -> connectWebSocket(), RECONNECT_DELAY_MS);
+                        mainHandler.postDelayed(
+                                this::connectWebSocket, RECONNECT_DELAY_MS);
                     }
                     break;
 
-                case "heartbeat":
-                    // Игнорируем ответы на heartbeat
-                    break;
-
-                default:
-                    // Также проверяем payload на тип postgres_changes
-                    // (некоторые версии Supabase отправляют иначе)
+                default: //payload.data.type
                     JSONObject p = msg.optJSONObject("payload");
                     if (p != null && p.has("data")) {
                         JSONObject data = p.optJSONObject("data");
                         if (data != null && data.has("type")) {
-                            Log.d(TAG, "Change in payload.data.type, refreshing...");
+                            Log.d(TAG, "Change detected in payload.data, refreshing...");
                             fetchAll();
                         }
                     }
@@ -178,15 +162,16 @@ public class SupabaseRealtimeClient {
         }
     }
 
-
     private void sendJoin(WebSocket ws) {
         try {
-            // Фильтр по user_id чтобы слушать только свои записи
+            // Фильтр: user_id=eq.<UUID пользователя>
             JSONObject changeFilter = new JSONObject();
-            changeFilter.put("event",  "*");          // INSERT, UPDATE, DELETE
+            changeFilter.put("event",  "*");
             changeFilter.put("schema", "public");
             changeFilter.put("table",  "places");
+
             if (userId != null && !userId.isEmpty()) {
+                // Формат фильтра для Realtime: "column=eq.value"
                 changeFilter.put("filter", "user_id=eq." + userId);
             }
 
@@ -201,26 +186,25 @@ public class SupabaseRealtimeClient {
             presenceConfig.put("key", "");
 
             JSONObject config = new JSONObject();
-            config.put("broadcast",       broadcastConfig);
-            config.put("presence",        presenceConfig);
+            config.put("broadcast",        broadcastConfig);
+            config.put("presence",         presenceConfig);
             config.put("postgres_changes", changes);
 
-            JSONObject payload = new JSONObject();
-            payload.put("config", config);
+            JSONObject joinPayload = new JSONObject();
+            joinPayload.put("config", config);
 
-            // Передаём access token в payload для авторизации
             String token = SupabaseClient.getInstance().getAccessToken();
             if (token != null) {
-                payload.put("access_token", token);
+                joinPayload.put("access_token", token);
             }
 
-            JSONObject msg = new JSONObject();
-            msg.put("topic",   "realtime:public:places");
-            msg.put("event",   "phx_join");
-            msg.put("payload", payload);
-            msg.put("ref",     String.valueOf(refCount.incrementAndGet()));
+            JSONObject joinMsg = new JSONObject();
+            joinMsg.put("topic",   "realtime:public:places");
+            joinMsg.put("event",   "phx_join");
+            joinMsg.put("payload", joinPayload);
+            joinMsg.put("ref",     String.valueOf(refCount.incrementAndGet()));
 
-            boolean sent = ws.send(msg.toString());
+            boolean sent = ws.send(joinMsg.toString());
             Log.d(TAG, "phx_join sent: " + sent);
 
         } catch (Exception e) {
@@ -255,7 +239,6 @@ public class SupabaseRealtimeClient {
             heartbeatTimer = null;
         }
     }
-
 
     private void fetchAll() {
         SupabaseRepository.getInstance().getAll(

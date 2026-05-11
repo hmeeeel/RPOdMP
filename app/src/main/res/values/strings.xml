@@ -141,4 +141,33 @@
 
     <string name="share">Поделиться</string>
     <string name="share_via">Поделиться через…</string>
+
+    <string name="create_route">Create Route</string>
+    <string name="selected_count">Selected: %d</string>
+    <string name="select_at_least_two">Select at least 2 places</string>
+
+    <string name="route_info">Основная информация</string>
+    <string name="route_title">Название маршрута *</string>
+    <string name="route_description">Описание (необязательно)</string>
+    <string name="route_category">Категория</string>
+    <string name="route_points">Точки маршрута</string>
+    <string name="view_on_map">Посмотреть на карте</string>
+    <string name="drag_to_reorder">Удерживайте и перетаскивайте для изменения порядка</string>
+    <string name="route_empty_state">Маршрут не может быть пустым</string>
+    <string name="route_privacy">Настройки приватности</string>
+    <string name="make_public">Сделать публичным</string>
+    <string name="make_public_hint">Публичные маршруты проходят модерацию и будут видны всем пользователям</string>
+    <string name="drag_handle">Перетащить</string>
+    <string name="remove_point">Удалить точку</string>
+    <string name="route_saved">Маршрут сохранён</string>
+    <string name="error_route_title">Введите название маршрута</string>
+    <string name="error_route_points">Добавьте минимум 2 точки</string>
+
+    <string-array name="route_categories">
+        <item>Исторический</item>
+        <item>Гастрономический</item>
+        <item>Природа</item>
+        <item>Культура</item>
+        <item>Развлечения</item>
+    </string-array>
 </resources>
