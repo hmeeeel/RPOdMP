@@ -25,6 +25,7 @@ import com.example.myapplication.ui.detail.IMuseumClick;
 import com.example.myapplication.ui.detail.MuseumDetailActivity;
 import com.example.myapplication.ui.map.MapActivity;
 import com.example.myapplication.ui.routes.CreateRouteActivity;
+import com.example.myapplication.ui.routes.RoutesActivity;
 import com.example.myapplication.ui.settings.SettingsActivity;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.chip.Chip;
@@ -367,8 +368,9 @@ public class MainActivity extends BaseActivity implements IMuseumClick {
             } else if (id == R.id.nav_map) {
                 startActivity(new Intent(MainActivity.this, MapActivity.class));
                 return true;
-            } else if (id == R.id.nav_favorites) {
-                startActivity(new Intent(MainActivity.this, AddMuseumActivity.class));
+            } else if (id == R.id.nav_routes) {
+                //startActivity(new Intent(MainActivity.this, AddMuseumActivity.class));
+                startActivity(new Intent(this, RoutesActivity.class));
                 return true;
             } else if (id == R.id.nav_settings) {
                 Intent intent = new Intent(MainActivity.this, SettingsActivity.class);

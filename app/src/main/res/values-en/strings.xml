@@ -173,4 +173,30 @@
         <item>Entertainment</item>
     </string-array>
 
+    <string name="no_coordinates_title">No Coordinates</string>
+    <string name="no_coordinates_message">None of the selected places have coordinates. Add coordinates in the place settings.</string>
+    <string name="some_points_no_coords">%d places without coordinates skipped on map</string>
+    <string name="ok">OK</string>
+
+    <string name="nav_routes">Routes</string>
+    <string name="routes_empty">No routes yet</string>
+    <string name="route_points_count">%d locations</string>
+    <string name="reviews_section">Reviews</string>
+    <string name="reviews_label">reviews</string>
+    <string name="status_public">Public</string>
+    <string name="status_my">Mine</string>
+    <string name="status_pending">Under review</string>
+    <string name="status_draft">Draft</string>
+    <string name="status_unavailable">Unavailable</string>
+    <string name="status_saved">Saved</string>
+    <string name="filter_public">Public</string>
+    <string name="filter_my">Mine</string>
+    <string name="filter_saved">Saved</string>
+    <string name="btn_save_route">Add route</string>
+    <string name="btn_unsave_route">Remove from saved</string>
+    <string name="route_saved_to_favorites">Route added to favorites</string>
+    <string name="search_routes_hint">Search routes…</string>
+
+    <string name="ic_bookmark_border">ic_bookmark_border</string>
+    <string name="ic_bookmark_filled">ic_bookmark_filled</string>
 </resources>

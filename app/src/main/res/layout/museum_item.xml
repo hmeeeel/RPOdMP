@@ -30,8 +30,8 @@
                 android:layout_gravity="top|end"
                 android:layout_margin="8dp"
                 android:visibility="gone"
-                android:clickable="false"
-                android:focusable="false"
+                android:clickable="true"
+                android:focusable="true"
                 android:background="@drawable/checkbox_background"/>
         </FrameLayout>
 

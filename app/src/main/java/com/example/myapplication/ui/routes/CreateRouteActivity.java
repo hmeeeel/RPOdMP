@@ -21,6 +21,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.myapplication.R;
 import com.example.myapplication.data.model.Place;
 import com.example.myapplication.data.repository.PlaceRepository;
+import com.example.myapplication.data.supabase.RouteRepository;
+import com.example.myapplication.data.supabase.SupabaseClient;
 import com.example.myapplication.ui.main.BaseActivity;
 import com.example.myapplication.ui.map.MapActivity;
 import com.google.android.material.button.MaterialButton;
@@ -234,7 +236,6 @@ public class CreateRouteActivity extends BaseActivity
 
         startActivity(intent);
     }
-
     private void saveRoute() {
         String title = editRouteTitle.getText().toString().trim();
 
@@ -243,25 +244,39 @@ public class CreateRouteActivity extends BaseActivity
             editRouteTitle.requestFocus();
             return;
         }
-
         if (routePoints.size() < 2) {
             Toast.makeText(this, R.string.error_route_points, Toast.LENGTH_SHORT).show();
             return;
         }
 
-        String description = editRouteDescription.getText().toString().trim();
-        String category = spinnerCategory.getText().toString();
-        boolean isPublic = switchPublic.isChecked();
+        String  description = editRouteDescription.getText().toString().trim();
+        String  category    = spinnerCategory.getText().toString();
+        boolean isPublic    = switchPublic.isChecked();
+        String  userId      = SupabaseClient.getInstance().getUserId();
 
-        // Создаём объект маршрута
-        Route route = new Route(title, description, isPublic);
-        route.setCategoryId(category);
-
-        // TODO: Сохранить маршрут в Supabase через вызов хранимой процедуры sp_create_route
-        // Пока просто показываем сообщение об успехе
-
-        Toast.makeText(this, R.string.route_saved, Toast.LENGTH_SHORT).show();
-        setResult(RESULT_OK);
-        finish();
+        // routePoints — уже List<RoutePoint> (ui.routes.RoutePoint)
+        RouteRepository.getInstance().createRoute(
+                userId,
+                title,
+                description,
+                isPublic,
+                category,
+                routePoints,
+                new PlaceRepository.DataCallback<String>() {
+                    @Override
+                    public void onSuccess(String routeId) {
+                        Toast.makeText(CreateRouteActivity.this,
+                                R.string.route_saved, Toast.LENGTH_SHORT).show();
+                        setResult(RESULT_OK);
+                        finish();
+                    }
+                    @Override
+                    public void onError(Exception e) {
+                        Toast.makeText(CreateRouteActivity.this,
+                                "Ошибка сохранения: " + e.getMessage(),
+                                Toast.LENGTH_LONG).show();
+                    }
+                }
+        );
     }
-}
+    }

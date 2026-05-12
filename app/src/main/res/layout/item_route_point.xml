@@ -33,7 +33,7 @@
             android:layout_marginStart="8dp"
             android:background="@drawable/circle_number_background"
             android:gravity="center"
-            android:textColor="@android:color/white"
+            android:textColor="@android:color/black"
             android:textSize="14sp"
             android:textStyle="bold"/>
 

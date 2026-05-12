@@ -1,6 +1,11 @@
 package com.example.myapplication.data.supabase;
 
 
+import android.util.Base64;
+import android.util.Log;
+
+import org.json.JSONObject;
+
 import java.util.concurrent.TimeUnit;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -46,6 +51,39 @@ public class SupabaseClient {
         accessToken  = null;
         refreshToken = null;
         userId       = null;
+    }
+    public String getUserEmail() {
+        if (accessToken == null || accessToken.isEmpty()) {
+            return null;
+        }
+        try {
+            // JWT - header.payload.signature
+            String[] parts = accessToken.split("\\.");
+            if (parts.length < 2) return null;
+
+            String base64EncodedBody = parts[1];
+
+            byte[] decodedBytes = Base64.decode(base64EncodedBody, Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
+            String body = new String(decodedBytes, "UTF-8");
+
+            // достаем email
+            JSONObject json = new JSONObject(body);
+            return json.optString("email", null);
+
+        } catch (Exception e) {
+            Log.e("SupabaseClient", "Error decoding JWT for email", e);
+            return null;
+        }
+    }
+
+    private Long numericUserId = null;
+
+    public Long getNumericUserId() {
+        return numericUserId;
+    }
+
+    public void setNumericUserId(Long id) {
+        this.numericUserId = id;
     }
 
     public String getAccessToken()  { return accessToken; }

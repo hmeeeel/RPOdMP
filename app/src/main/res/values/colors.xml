@@ -21,6 +21,11 @@
 
     <color name="error_red">#B00020</color>
 
-    <color name="selection_highlight">#202121</color>
-    <color name="selection_highlight_dark">#1E3A5F</color>
+
+    <color name="selection_highlight_light">#6e7c96</color>
+    <color name="selection_highlight_selector_light">#E3F2FD</color>
+
+
+    <color name="selection_highlight_selector_dark">#E3F2FD</color>
+    <color name="selection_highlight_dark">#E3F2FD</color>
 </resources>

@@ -25,7 +25,7 @@ public class ImageLoader {
             if (resId != 0) {
                 Glide.with(context)
                         .load(resId)
-                        .placeholder(R.drawable.bg_minsk_light)
+                        .placeholder(R.drawable.no_photo)
                         .error(R.drawable.no_photo)
                        // .diskCacheStrategy(DiskCacheStrategy.NONE)
                         .into(imageView);
@@ -40,7 +40,7 @@ public class ImageLoader {
             if (imageFile.exists()) {
                 Glide.with(context)
                         .load(imageFile)
-                        .placeholder(R.drawable.bg_minsk_light)
+                        .placeholder(R.drawable.no_photo)
                         .error(R.drawable.no_photo)
                        // .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
                         .into(imageView);
@@ -59,7 +59,7 @@ public class ImageLoader {
                 if (imageFile.exists()) {
                     Glide.with(context)
                             .load(imageFile)
-                            .placeholder(R.drawable.bg_minsk_light)
+                            .placeholder(R.drawable.no_photo)
                             .error(R.drawable.no_photo)
                           //  .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
                             .into(imageView);

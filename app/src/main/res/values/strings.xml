@@ -170,4 +170,32 @@
         <item>Культура</item>
         <item>Развлечения</item>
     </string-array>
+
+
+    <string name="no_coordinates_title">Нет координат</string>
+    <string name="no_coordinates_message">Ни одно из выбранных мест не имеет координат. Добавьте координаты в настройках места.</string>
+    <string name="some_points_no_coords">%d мест без координат пропущено на карте</string>
+    <string name="ok">ОК</string>
+
+    <string name="nav_routes">Маршруты</string>
+    <string name="routes_empty">Маршрутов пока нет</string>
+    <string name="route_points_count">%d точек</string>
+    <string name="reviews_section">Отзывы</string>
+    <string name="reviews_label">отзывов</string>
+    <string name="status_public">Публичный</string>
+    <string name="status_my">Мой</string>
+    <string name="status_pending">На модерации</string>
+    <string name="status_draft">Черновик</string>
+    <string name="status_unavailable">Недоступен</string>
+    <string name="status_saved">Сохранён</string>
+    <string name="filter_public">Публичные</string>
+    <string name="filter_my">Мои</string>
+    <string name="filter_saved">Сохранённые</string>
+    <string name="btn_save_route">Добавить маршрут</string>
+    <string name="btn_unsave_route">Убрать из сохранённых</string>
+    <string name="route_saved_to_favorites">Маршрут добавлен в избранное</string>
+    <string name="search_routes_hint">Поиск маршрутов…</string>
+
+    <string name="ic_bookmark_border">ic_bookmark_border</string>
+    <string name="ic_bookmark_filled">ic_bookmark_filled</string>
 </resources>

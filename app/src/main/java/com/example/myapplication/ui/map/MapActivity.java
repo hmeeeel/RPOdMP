@@ -23,6 +23,7 @@ import com.example.myapplication.R;
 import com.example.myapplication.ui.add.AddMuseumActivity;
 import com.example.myapplication.ui.main.BaseActivity;
 import com.example.myapplication.ui.main.MainActivity;
+import com.example.myapplication.ui.routes.RoutesActivity;
 import com.example.myapplication.ui.settings.SettingsActivity;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.snackbar.Snackbar;
@@ -461,8 +462,9 @@ public class MapActivity extends BaseActivity implements InputListener {
                 return true;
             } else if (id == R.id.nav_map) {
                 return true;
-            } else if (id == R.id.nav_favorites) {
-                startActivity(new Intent(this, AddMuseumActivity.class));
+            } else if (id == R.id.nav_routes) {
+                //startActivity(new Intent(this, AddMuseumActivity.class));
+                startActivity(new Intent(this, RoutesActivity.class));
                 return true;
             } else if (id == R.id.nav_settings) {
                 startActivity(new Intent(this, SettingsActivity.class));

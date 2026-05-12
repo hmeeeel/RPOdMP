@@ -152,12 +152,23 @@ public class MuseumAdapter extends RecyclerView.Adapter<MuseumAdapter.ViewHolder
 
         boolean isSelected = selectedPlaceIds.contains(place.getId());
         holder.checkboxSelect.setVisibility(selectionMode ? View.VISIBLE : View.GONE);
+
+        holder.checkboxSelect.setOnCheckedChangeListener(null);
         holder.checkboxSelect.setChecked(isSelected);
+
+        holder.checkboxSelect.setOnCheckedChangeListener((buttonView, isChecked) -> {
+
+            if (!selectionMode) {
+                setSelectionMode(true);
+            }
+
+            toggleSelection(place.getId(), holder);
+        });
 
         if (selectionMode && isSelected) {
             int highlightColor = context.getResources().getBoolean(R.bool.is_dark_theme)
                     ? ContextCompat.getColor(context, R.color.selection_highlight_dark)
-                    : ContextCompat.getColor(context, R.color.selection_highlight_selector);
+                    : ContextCompat.getColor(context, R.color.selection_highlight_selector_dark);
             holder.cardView.setCardBackgroundColor(highlightColor);
         } else {
           //  holder.cardView.setCardBackgroundColor(ContextCompat.getColor(context, R.color.selection_highlight));

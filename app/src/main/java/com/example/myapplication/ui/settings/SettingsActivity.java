@@ -32,6 +32,7 @@ import com.example.myapplication.ui.main.BaseActivity;
 import com.example.myapplication.ui.main.MainActivity;
 import com.example.myapplication.ui.map.MapActivity;
 import com.example.myapplication.ui.notification.NotificationScheduler;
+import com.example.myapplication.ui.routes.RoutesActivity;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.textfield.TextInputEditText;
 
@@ -415,8 +416,9 @@ public class SettingsActivity extends BaseActivity {
             } else if (id == R.id.nav_map) {
                 startActivity(new Intent(this, MapActivity.class));
                 return true;
-            } else if (id == R.id.nav_favorites) {
-                startActivity(new Intent(this, AddMuseumActivity.class));
+            } else if (id == R.id.nav_routes) {
+               // startActivity(new Intent(this, AddMuseumActivity.class));
+                startActivity(new Intent(this, RoutesActivity.class));
                 return true;
             }
             return id == R.id.nav_settings;

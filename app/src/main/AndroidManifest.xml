@@ -57,6 +57,8 @@
             android:name=".ui.routes.CreateRouteActivity"
             android:parentActivityName=".ui.main.MainActivity" />
 
+        <activity android:name=".ui.routes.RoutesActivity" />
+        <activity android:name=".ui.routes.RouteDetailActivity" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

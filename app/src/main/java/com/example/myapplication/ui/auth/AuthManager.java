@@ -132,7 +132,6 @@ public class AuthManager {
         try {
             JsonObject json = JsonParser.parseString(rb).getAsJsonObject();
 
-            // Supabase /signup возвращает user без access_token если email-подтверждение включено
             String accessToken  = json.has("access_token")  ? json.get("access_token").getAsString()  : null;
             String refreshToken = json.has("refresh_token") ? json.get("refresh_token").getAsString() : null;
 
@@ -141,18 +140,60 @@ public class AuthManager {
             String email = userObj != null && userObj.has("email") ? userObj.get("email").getAsString() : null;
 
             if (accessToken == null || uid == null) {
-                // email-подтверждение включено — пользователь создан, нужно подтвердить email
                 postError(callback, new Exception("email_confirmation_required"));
                 return;
             }
 
+            // 1. Сохраняем сессию
             SupabaseClient.getInstance().setSession(accessToken, refreshToken, uid);
+
+            // 2. Загружаем числовой ID СИНХРОННО (для любого пользователя)
+            if (email != null && !email.isEmpty()) {
+                String query = "select=id&email=eq." + email;
+                okhttp3.Request request = SupabaseClient.getInstance()
+                        .dbRequest("users", query).get().build();
+                okhttp3.Response resp = SupabaseClient.getInstance()
+                        .getHttpClient().newCall(request).execute();
+                String body = resp.body().string();
+                com.google.gson.JsonArray arr =
+                        com.google.gson.JsonParser.parseString(body).getAsJsonArray();
+                if (arr.size() > 0) {
+                    long id = arr.get(0).getAsJsonObject().get("id").getAsLong();
+                    //  любой пользователь получает свой числовой ID!
+                    SupabaseClient.getInstance().setNumericUserId(id);
+                    Log.d("AuthManager", " numericUserId для " + email + ": " + id);
+                }
+            }
+
+            // 3. Вызываем callback
             SupabaseUser user = new SupabaseUser(uid, email != null ? email : "");
             new android.os.Handler(android.os.Looper.getMainLooper())
                     .post(() -> callback.onSuccess(user));
 
         } catch (Exception e) {
             postError(callback, e);
+        }
+    }
+
+    // Синхронный метод — выполняется в текущем потоке
+    private void loadNumericIdSync(String email) {
+        try {
+            String query = "select=id&email=eq." + email;
+            okhttp3.Request request = SupabaseClient.getInstance()
+                    .dbRequest("users", query).get().build();
+            okhttp3.Response response = SupabaseClient.getInstance()
+                    .getHttpClient().newCall(request).execute();
+
+            String body = response.body().string();
+            com.google.gson.JsonArray arr =
+                    com.google.gson.JsonParser.parseString(body).getAsJsonArray();
+            if (arr.size() > 0) {
+                long id = arr.get(0).getAsJsonObject().get("id").getAsLong();
+                SupabaseClient.getInstance().setNumericUserId(id);
+                Log.d("AuthManager", " numericUserId СИНХРОННО: " + id);
+            }
+        } catch (Exception e) {
+            Log.e("AuthManager", "Ошибка синхронной загрузки numericUserId", e);
         }
     }
 
