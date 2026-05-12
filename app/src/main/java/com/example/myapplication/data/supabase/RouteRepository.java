@@ -301,7 +301,7 @@ public class RouteRepository {
     }
 
     //  ТОЧКИ МАРШРУТА
-    public void getRoutePoints(String routeId,
+   /* public void getRoutePoints(String routeId,
                                PlaceRepository.DataCallback<List<RoutePoint>> callback) {
         String query = "select=id,point_order,"
                 + "places!place_id(id,name,address,latitude,longitude,"
@@ -328,8 +328,157 @@ public class RouteRepository {
                         mainHandler.post(() -> callback.onSuccess(parseRoutePoints(body)));
                     }
                 });
+    }*/
+    public void getRoutePoints(String routeId,
+                               PlaceRepository.DataCallback<List<RoutePoint>> callback) {
+        getRoutePoints(routeId, null, callback);
+    }
+    public void getRoutePoints(String routeId,
+                               Long numericUserId,
+                               PlaceRepository.DataCallback<List<RoutePoint>> callback) {
+
+        // Добавляем is_visited прямо в SELECT из places
+        String query = "select=id,point_order,"
+                + "places!place_id(id,name,address,latitude,longitude,"
+                + "image_ids,description,phone,working_hours,is_visited)"
+                + "&route_id=eq." + routeId
+                + "&order=point_order.asc";
+
+        client.getHttpClient()
+                .newCall(client.dbRequest("route_points", query).get().build())
+                .enqueue(new Callback() {
+                    @Override
+                    public void onFailure(Call call, IOException e) {
+                        mainHandler.post(() -> callback.onError(e));
+                    }
+
+                    @Override
+                    public void onResponse(Call call, Response r) throws IOException {
+                        String body = r.body().string();
+                        if (!r.isSuccessful()) {
+                            mainHandler.post(() -> callback.onError(
+                                    new Exception("routePoints " + r.code() + ": " + body)));
+                            return;
+                        }
+
+                        // Просто парсим — is_visited  внутри
+                        List<RoutePoint> points = parseRoutePoints(body);
+                        mainHandler.post(() -> callback.onSuccess(points));
+
+                    }
+                });
     }
 
+
+    /**
+     * user_places.user_id = bigint  принимаем Long
+     * user_places.place_id = bigint  в запросе числа, не строки
+     * places.id = bigint  getFirestoreId() содержит строку числа ("123")
+     */
+    private void enrichWithVisitedStatus(
+            List<RoutePoint> points,
+            Long numericUserId,
+            PlaceRepository.DataCallback<List<RoutePoint>> callback) {
+
+        // ВРЕМЕННЫЙ ЛОГ
+        Log.e("ENRICH_DEBUG", "=== enrichWithVisitedStatus called ===");
+        Log.e("ENRICH_DEBUG", "numericUserId: " + numericUserId);
+        Log.e("ENRICH_DEBUG", "points count: " + points.size());
+
+        for (RoutePoint rp : points) {
+            Place p = rp.getPlace();
+            Log.e("ENRICH_DEBUG", "  point: place="
+                    + (p != null ? p.getName() : "NULL")
+                    + " firestoreId=" + (p != null ? p.getFirestoreId() : "NULL"));
+        }
+        // Собираем bigint place_id как числа
+        // places.id = bigint, firestoreId хранит его как строку числа
+        List<Long> placeIdLongs = new ArrayList<>();
+        Map<Long, RoutePoint> pointByPlaceId = new HashMap<>();
+
+        for (RoutePoint rp : points) {
+            Place p = rp.getPlace();
+            if (p == null) continue;
+
+            String fid = p.getFirestoreId(); // "123" — строка bigint
+            if (fid == null || fid.isEmpty()) continue;
+
+            try {
+                long pid = Long.parseLong(fid);
+                placeIdLongs.add(pid);
+                pointByPlaceId.put(pid, rp);
+            } catch (NumberFormatException e) {
+                Log.w(TAG, "Cannot parse place firestoreId as Long: " + fid);
+            }
+        }
+
+        if (placeIdLongs.isEmpty()) {
+            mainHandler.post(() -> callback.onSuccess(points));
+            return;
+        }
+
+        // Строим IN-клаузу из чисел: (1,2,3) — без кавычек, bigint!
+        StringBuilder inClause = new StringBuilder();
+        for (int i = 0; i < placeIdLongs.size(); i++) {
+            if (i > 0) inClause.append(',');
+            inClause.append(placeIdLongs.get(i)); // числа, не строки
+        }
+
+        // user_places.user_id = bigint  numericUserId (Long)
+        // user_places.place_id = bigint  числа в IN()
+        String query = "select=place_id,is_visited"
+                + "&user_id=eq." + numericUserId   // bigint
+                + "&place_id=in.(" + inClause + ")"; // bigint IN
+
+        Log.d(TAG, "enrichWithVisitedStatus: userId=" + numericUserId
+                + " placeIds=" + inClause);
+
+        client.getHttpClient()
+                .newCall(client.dbRequest("user_places", query).get().build())
+                .enqueue(new Callback() {
+                    @Override
+                    public void onFailure(Call call, IOException e) {
+                        Log.w(TAG, "user_places fetch failed", e);
+                        mainHandler.post(() -> callback.onSuccess(points));
+                    }
+
+                    @Override
+                    public void onResponse(Call call, Response r) throws IOException {
+                        String body = r.body().string();
+                        Log.e("ENRICH_DEBUG", "user_places response code: " + r.code());
+                        Log.e("ENRICH_DEBUG", "user_places response body: " + body);
+                        Log.d(TAG, "user_places response " + r.code() + ": " + body);
+
+                        if (!r.isSuccessful()) {
+                            mainHandler.post(() -> callback.onSuccess(points));
+                            return;
+                        }
+
+                        try {
+                            JsonArray arr = JsonParser.parseString(body).getAsJsonArray();
+                            for (JsonElement el : arr) {
+                                JsonObject obj = el.getAsJsonObject();
+
+                                // place_id в ответе = bigint  читаем как long
+                                long    pid     = lng(obj, "place_id");
+                                boolean visited = bool(obj, "is_visited");
+
+                                RoutePoint rp = pointByPlaceId.get(pid);
+                                if (rp != null && rp.getPlace() != null) {
+                                    rp.getPlace().setVisited(visited);
+                                    Log.d(TAG, "  place_id=" + pid
+                                            + " name=" + rp.getPlace().getName()
+                                            + " visited=" + visited);
+                                }
+                            }
+                        } catch (Exception e) {
+                            Log.e(TAG, "parse user_places error", e);
+                        }
+
+                        mainHandler.post(() -> callback.onSuccess(points));
+                    }
+                });
+    }
     private List<RoutePoint> parseRoutePoints(String json) {
         List<RoutePoint> list = new ArrayList<>();
         try {
@@ -377,6 +526,7 @@ public class RouteRepository {
         p.setDescription(str(j, "description"));
         p.setPhone(str(j, "phone"));
         p.setWorkingHours(str(j, "working_hours"));
+        p.setVisited(bool(j, "is_visited"));  // ← ДОБАВИТЬ ЭТУ СТРОКУ
 
         ArrayList<String> imgs = new ArrayList<>();
         if (j.has("image_ids") && !j.get("image_ids").isJsonNull()) {

@@ -10,6 +10,8 @@ import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -40,7 +42,7 @@ public class RouteDetailActivity extends BaseActivity
 
     private List<RoutePoint> points = new ArrayList<>();
     private List<RouteReview>               reviews = new ArrayList<>();
-
+    private ActivityResultLauncher<Intent> detailLauncher;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -51,12 +53,27 @@ public class RouteDetailActivity extends BaseActivity
 
         viewModel = new ViewModelProvider(this).get(RouteDetailViewModel.class);
 
+        detailLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    // Возврат из MuseumDetailActivity или AddMuseumActivity
+                    // Перезагружаем точки маршрута с актуальным is_visited
+                    viewModel.reloadPoints(routeCard.getId());
+                }
+        );
+
         setupToolbar();
         bindHeader();
         setupRecyclerViews();
         observeData();
-
         viewModel.loadDetail(routeCard.getId());
+    }
+
+    @Override
+    public void onPointClick(Place place) {
+        Intent intent = new Intent(this, MuseumDetailActivity.class);
+        intent.putExtra("place", place);
+        detailLauncher.launch(intent);  //  launcher вместо startActivity
     }
 
     private void setupToolbar() {
@@ -190,12 +207,7 @@ public class RouteDetailActivity extends BaseActivity
     }
 
 
-    @Override
-    public void onPointClick(Place place) {
-        Intent intent = new Intent(this, MuseumDetailActivity.class);
-        intent.putExtra("place", place);
-        startActivity(intent);
-    }
+
 
 
     //  Карта

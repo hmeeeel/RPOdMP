@@ -1,6 +1,8 @@
 package com.example.myapplication.ui.routes;
 
 import android.app.Application;
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
@@ -30,11 +32,13 @@ public class RouteDetailViewModel extends AndroidViewModel {
     public final LiveData<Boolean>           isLoading = _isLoading;
     public final LiveData<String>            error     = _error;
     public final LiveData<String>            event     = _event;
-
+    private final Long            numericUserId;
     public RouteDetailViewModel(@NonNull Application application) {
         super(application);
         repository    = RouteRepository.getInstance();
         currentUserId = SupabaseClient.getInstance().getUserId();
+        numericUserId = SupabaseClient.getInstance().getNumericUserId();
+
     }
 
     public String getCurrentUserId() { return currentUserId; }
@@ -45,9 +49,25 @@ public class RouteDetailViewModel extends AndroidViewModel {
         loadReviews(routeId);
         checkSavedStatus(routeId);
     }
-
+    public void reloadPoints(String routeId) {
+        repository.getRoutePoints(
+                routeId,
+                new PlaceRepository.DataCallback<List<RoutePoint>>() {
+                    @Override
+                    public void onSuccess(List<RoutePoint> data) {
+                        _points.setValue(data);
+                    }
+                    @Override
+                    public void onError(Exception e) {
+                        Log.w("RouteDetailVM", "reloadPoints error: " + e.getMessage());
+                    }
+                });
+    }
     private void loadPoints(String routeId) {
-        repository.getRoutePoints(routeId,
+        // numericUserId = Long (bigint) — соответствует user_places.user_id
+        repository.getRoutePoints(
+                routeId,
+                numericUserId,  // Long, не String
                 new PlaceRepository.DataCallback<List<RoutePoint>>() {
                     @Override
                     public void onSuccess(List<RoutePoint> data) {
@@ -75,26 +95,29 @@ public class RouteDetailViewModel extends AndroidViewModel {
     }
 
     public void checkSavedStatus(String routeId) {
-        if (currentUserId == null) return;
-        repository.checkSaved(currentUserId, routeId,
+        if (numericUserId == null) return;
+        repository.checkSaved(String.valueOf(numericUserId), routeId,
                 new PlaceRepository.DataCallback<Boolean>() {
-                    @Override
-                    public void onSuccess(Boolean saved) { _isSaved.setValue(saved); }
-                    @Override
-                    public void onError(Exception e)     { _isSaved.setValue(false); }
+                    @Override public void onSuccess(Boolean saved) { _isSaved.setValue(saved); }
+                    @Override public void onError(Exception e)     { _isSaved.setValue(false); }
                 });
     }
 
     public void toggleSave(String routeId) {
+        // Используем numericUserId для user_saved_routes.user_id (bigint)
+        String uid = numericUserId != null
+                ? String.valueOf(numericUserId)
+                : currentUserId;
+
         Boolean saved = _isSaved.getValue();
         if (Boolean.TRUE.equals(saved)) {
-            repository.unsaveRoute(currentUserId, routeId,
+            repository.unsaveRoute(uid, routeId,
                     new PlaceRepository.DataCallback<Void>() {
                         @Override public void onSuccess(Void v) { _isSaved.setValue(false); }
                         @Override public void onError(Exception e) { _error.setValue(e.getMessage()); }
                     });
         } else {
-            repository.saveRoute(currentUserId, routeId,
+            repository.saveRoute(uid, routeId,
                     new PlaceRepository.DataCallback<Void>() {
                         @Override public void onSuccess(Void v) {
                             _isSaved.setValue(true);

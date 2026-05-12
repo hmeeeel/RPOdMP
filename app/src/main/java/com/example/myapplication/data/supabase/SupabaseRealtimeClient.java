@@ -118,45 +118,33 @@ public class SupabaseRealtimeClient {
 
     private void handleMessage(String text) {
         try {
-            JSONObject msg   = new JSONObject(text);
-            String     event = msg.optString("event", "");
+            JSONObject msg = new JSONObject(text);
+            String event = msg.optString("event", "");
+
+            if ("postgres_changes".equals(event)) {
+                Log.d(TAG, "🔥🔥🔥 DATABASE CHANGE RECEIVED! 🔥🔥🔥");
+                JSONObject payload = msg.optJSONObject("payload");
+                if (payload != null) {
+                    JSONObject data = payload.optJSONObject("data");
+                    if (data != null) {
+                        String type = data.optString("type");
+                        Log.d(TAG, "Change type: " + type); // INSERT, UPDATE, DELETE
+                    }
+                }
+                fetchAll();
+                return;
+            }
 
             switch (event) {
-                case "phx_reply": // status - ok
+                case "phx_reply":
                     JSONObject payload = msg.optJSONObject("payload");
                     if (payload != null) {
                         String status = payload.optString("status", "");
                         Log.d(TAG, "phx_reply status: " + status);
-                        if ("ok".equals(status)) {
-                            Log.d(TAG, "Realtime subscription confirmed");
-                        }
-                    }
-                    break;
-
-                case "postgres_changes": // INSERT/UPDATE/DELETE
-                    Log.d(TAG, "postgres_changes detected, refreshing...");
-                    fetchAll();
-                    break;
-
-                case "phx_error":
-                    Log.w(TAG, "phx_error received, reconnecting...");
-                    if (active) {
-                        mainHandler.postDelayed(
-                                this::connectWebSocket, RECONNECT_DELAY_MS);
-                    }
-                    break;
-
-                default: //payload.data.type
-                    JSONObject p = msg.optJSONObject("payload");
-                    if (p != null && p.has("data")) {
-                        JSONObject data = p.optJSONObject("data");
-                        if (data != null && data.has("type")) {
-                            Log.d(TAG, "Change detected in payload.data, refreshing...");
-                            fetchAll();
-                        }
                     }
                     break;
             }
+
         } catch (Exception e) {
             Log.e(TAG, "handleMessage error", e);
         }
@@ -164,31 +152,20 @@ public class SupabaseRealtimeClient {
 
     private void sendJoin(WebSocket ws) {
         try {
-            // Фильтр: user_id=eq.<UUID пользователя>
             JSONObject changeFilter = new JSONObject();
-            changeFilter.put("event",  "*");
+            changeFilter.put("event", "*");
             changeFilter.put("schema", "public");
-            changeFilter.put("table",  "places");
+            changeFilter.put("table", "places");
 
-            if (userId != null && !userId.isEmpty()) {
-                // Формат фильтра для Realtime: "column=eq.value"
+           if (userId != null && !userId.isEmpty()) {
                 changeFilter.put("filter", "user_id=eq." + userId);
             }
 
-            JSONArray changes = new JSONArray();
-            changes.put(changeFilter);
-
-            JSONObject broadcastConfig = new JSONObject();
-            broadcastConfig.put("ack",  false);
-            broadcastConfig.put("self", false);
-
-            JSONObject presenceConfig = new JSONObject();
-            presenceConfig.put("key", "");
+            JSONArray postgresChanges = new JSONArray();
+            postgresChanges.put(changeFilter);
 
             JSONObject config = new JSONObject();
-            config.put("broadcast",        broadcastConfig);
-            config.put("presence",         presenceConfig);
-            config.put("postgres_changes", changes);
+            config.put("postgres_changes", postgresChanges);
 
             JSONObject joinPayload = new JSONObject();
             joinPayload.put("config", config);
@@ -199,13 +176,13 @@ public class SupabaseRealtimeClient {
             }
 
             JSONObject joinMsg = new JSONObject();
-            joinMsg.put("topic",   "realtime:public:places");
-            joinMsg.put("event",   "phx_join");
+            joinMsg.put("topic", "realtime:public");
+            joinMsg.put("event", "phx_join");
             joinMsg.put("payload", joinPayload);
-            joinMsg.put("ref",     String.valueOf(refCount.incrementAndGet()));
+            joinMsg.put("ref", String.valueOf(refCount.incrementAndGet()));
 
-            boolean sent = ws.send(joinMsg.toString());
-            Log.d(TAG, "phx_join sent: " + sent);
+            Log.d(TAG, "📡 Sending phx_join: " + joinMsg.toString());
+            ws.send(joinMsg.toString());
 
         } catch (Exception e) {
             Log.e(TAG, "sendJoin error", e);
