@@ -3,6 +3,7 @@ package com.example.myapplication.ui.main;
 import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -172,6 +173,10 @@ public class MuseumAdapter extends RecyclerView.Adapter<MuseumAdapter.ViewHolder
             holder.cardView.setCardBackgroundColor(highlightColor);
         } else {
           //  holder.cardView.setCardBackgroundColor(ContextCompat.getColor(context, R.color.selection_highlight));
+
+            TypedValue typedValue = new TypedValue();
+            context.getTheme().resolveAttribute(com.google.android.material.R.attr.colorSurface, typedValue, true);
+            holder.cardView.setCardBackgroundColor(typedValue.data);
         }
 
         holder.itemView.setOnClickListener(v -> {

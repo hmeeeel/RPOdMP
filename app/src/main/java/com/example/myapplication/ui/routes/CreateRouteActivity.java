@@ -1,5 +1,6 @@
 package com.example.myapplication.ui.routes;
 
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -23,6 +24,7 @@ import com.example.myapplication.data.model.Place;
 import com.example.myapplication.data.repository.PlaceRepository;
 import com.example.myapplication.data.supabase.RouteRepository;
 import com.example.myapplication.data.supabase.SupabaseClient;
+import com.example.myapplication.data.supabase.SupabaseRepository;
 import com.example.myapplication.ui.main.BaseActivity;
 import com.example.myapplication.ui.map.MapActivity;
 import com.google.android.material.button.MaterialButton;
@@ -147,46 +149,57 @@ public class CreateRouteActivity extends BaseActivity
         loadPlacesFromDatabase(placeIds);
     }
 
-    private void loadPlacesFromDatabase(List<Long> placeIds) {  // ← Long
+    private void loadPlacesFromDatabase(List<Long> placeIds) {
         Log.e("CREATE_ROUTE_DEBUG", "Looking for placeIds: " + placeIds);
 
-        placeRepository.getAllPlaces(new PlaceRepository.DataCallback<List<Place>>() {
+        // Загружаем из Supabase, а не из Room
+        SupabaseRepository.getInstance().getAll(new PlaceRepository.DataCallback<List<Place>>() {
             @Override
             public void onSuccess(List<Place> allPlaces) {
-                Log.e("CREATE_ROUTE_DEBUG", "Total places in DB: " + allPlaces.size());
+                Log.e("CREATE_ROUTE_DEBUG", "Total places in Supabase: " + allPlaces.size());
 
                 routePoints.clear();
 
                 int order = 1;
-                for (Long placeId : placeIds) {  // ← Long
+                for (Long placeId : placeIds) {
+                    boolean found = false;
                     for (Place place : allPlaces) {
-                        Log.e("CREATE_ROUTE_DEBUG", "Comparing: placeId=" + placeId
-                                + " vs place.getId()=" + place.getId()
-                                + " | match=" + (place.getId() == placeId));
-
-                        if (place.getId() == placeId) {  // сравнение long
-                            RoutePoint point = new RoutePoint(place.getId(), order);
-                            point.setPlace(place);
-                            routePoints.add(point);
-                            order++;
-
-                            Log.e("CREATE_ROUTE_DEBUG", "FOUND: " + place.getName());
-
-                            break;
+                        // Сравниваем firestoreId (строка) с placeId (long)
+                        String fsId = place.getFirestoreId();
+                        if (fsId != null && !fsId.isEmpty()) {
+                            try {
+                                if (Long.parseLong(fsId) == placeId) {
+                                    RoutePoint point = new RoutePoint(placeId, order);
+                                    point.setPlace(place);
+                                    routePoints.add(point);
+                                    order++;
+                                    Log.e("CREATE_ROUTE_DEBUG", "FOUND: " + place.getName());
+                                    found = true;
+                                    break;
+                                }
+                            } catch (NumberFormatException ignored) {}
                         }
+                    }
+                    if (!found) {
+                        Log.e("CREATE_ROUTE_DEBUG", "NOT FOUND in Supabase: placeId=" + placeId);
                     }
                 }
 
                 adapter.notifyDataSetChanged();
                 updateEmptyState();
+
+                if (routePoints.isEmpty()) {
+                    Toast.makeText(CreateRouteActivity.this,
+                            "Места с такими ID не найдены в Supabase", Toast.LENGTH_LONG).show();
+                }
             }
 
             @Override
             public void onError(Exception e) {
-                Log.e("ROUTE_DEBUG", "Error loading places", e);
+                Log.e("ROUTE_DEBUG", "Error loading from Supabase", e);
                 Toast.makeText(CreateRouteActivity.this,
-                        "Error loading places: " + e.getMessage(),
-                        Toast.LENGTH_SHORT).show();
+                        "Ошибка загрузки из Supabase: " + e.getMessage(),
+                        Toast.LENGTH_LONG).show();
             }
         });
     }
@@ -214,26 +227,42 @@ public class CreateRouteActivity extends BaseActivity
             return;
         }
 
-        Intent intent = new Intent(this, MapActivity.class);
-        intent.putExtra("mode", "route_preview");
-
-        // передача
-        ArrayList<Double> latitudes = new ArrayList<>();
+        ArrayList<Double> latitudes  = new ArrayList<>();
         ArrayList<Double> longitudes = new ArrayList<>();
-        ArrayList<String> names = new ArrayList<>();
+        ArrayList<String> names      = new ArrayList<>();
+        int skipped = 0;
 
         for (RoutePoint point : routePoints) {
-            if (point.getPlace() != null) {
-                latitudes.add(point.getPlace().getLatitude());
-                longitudes.add(point.getPlace().getLongitude());
-                names.add(point.getPlace().getName());
+            Place p = point.getPlace();
+            if (p != null && p.hasCoordinates()) {
+                latitudes.add(p.getLatitude());
+                longitudes.add(p.getLongitude());
+                names.add(p.getName());
+            } else {
+                skipped++;
             }
         }
 
-        intent.putExtra("latitudes", latitudes);
+        if (latitudes.isEmpty()) {
+            new AlertDialog.Builder(this)
+                    .setTitle(getString(R.string.no_coordinates_title))
+                    .setMessage(getString(R.string.no_coordinates_message))
+                    .setPositiveButton(getString(R.string.ok), null)
+                    .show();
+            return;
+        }
+
+        if (skipped > 0) {
+            Toast.makeText(this,
+                    getString(R.string.some_points_no_coords, skipped),
+                    Toast.LENGTH_LONG).show();
+        }
+
+        Intent intent = new Intent(this, MapActivity.class);
+        intent.putExtra("mode", "route_preview");
+        intent.putExtra("latitudes",  latitudes);
         intent.putExtra("longitudes", longitudes);
         intent.putStringArrayListExtra("names", names);
-
         startActivity(intent);
     }
     private void saveRoute() {

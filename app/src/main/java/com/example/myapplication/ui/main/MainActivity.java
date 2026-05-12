@@ -166,6 +166,7 @@ public class MainActivity extends BaseActivity implements IMuseumClick {
     private void exitSelectionMode() {
         isSelectionMode = false;
         museumAdapter.clearSelectionSilently();
+        museumAdapter.notifyDataSetChanged();
         invalidateOptionsMenu();
 
         if (getSupportActionBar() != null) {
@@ -395,6 +396,11 @@ public class MainActivity extends BaseActivity implements IMuseumClick {
     protected void onResume() {
         super.onResume();
         viewModel.loadMuseums();
+
+        // Сброс выделения при возврате
+        if (isSelectionMode) {
+            exitSelectionMode();
+        }
 
         applySortToChips(viewModel.getCurrentSort());
         applyFilterToChips(viewModel.getCurrentFilter());

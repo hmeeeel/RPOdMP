@@ -33,20 +33,42 @@ public class AddMuseumViewModel extends AndroidViewModel {
     }
 
     public void insertPlace(Place place) {
+        if (place.hasCoordinates()) {
+            roomRepo.findDuplicate(
+                    place.getName(),
+                    place.getLatitude(),
+                    place.getLongitude(),
+                    new PlaceRepository.DataCallback<Place>() {
+                        @Override
+                        public void onSuccess(Place duplicate) {
+                            if (duplicate != null) {
+                                _error.setValue("Место с такими координатами уже добавлено: "
+                                        + duplicate.getName());
+                            } else {
+                                doInsert(place);
+                            }
+                        }
+                        @Override
+                        public void onError(Exception e) {
+                            doInsert(place);
+                        }
+                    }
+            );
+        } else {
+            doInsert(place);
+        }
+    }
+
+    private void doInsert(Place place) {
         supabaseRepo.insert(place, new PlaceRepository.DataCallback<String>() {
-            @Override
-            public void onSuccess(String supabaseId) {
+            @Override public void onSuccess(String supabaseId) {
                 place.setFirestoreId(supabaseId);
                 roomRepo.upsertFromFirestore(place, new PlaceRepository.DataCallback<Void>() {
-                    @Override public void onSuccess(Void v) {
-                        _saved.setValue(true);
-                        if (realtimeClient != null) realtimeClient.refresh(); // ← уведомить
-                    }
+                    @Override public void onSuccess(Void v) { _saved.setValue(true); }
                     @Override public void onError(Exception e) { _saved.setValue(true); }
                 });
             }
-            @Override
-            public void onError(Exception e) { _error.setValue(e.getMessage()); }
+            @Override public void onError(Exception e) { _error.setValue(e.getMessage()); }
         });
     }
 
