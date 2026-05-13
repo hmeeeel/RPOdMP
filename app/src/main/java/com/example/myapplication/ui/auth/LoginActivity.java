@@ -2,6 +2,7 @@ package com.example.myapplication.ui.auth;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -9,6 +10,7 @@ import android.widget.Toast;
 
 import com.example.myapplication.R;
 import com.example.myapplication.data.supabase.SupabaseUser;
+import com.example.myapplication.ui.admin.AdminPanelActivity;
 import com.example.myapplication.ui.main.BaseActivity;
 import com.example.myapplication.ui.main.MainActivity;
 import com.example.myapplication.ui.settings.SettingsManager;
@@ -96,7 +98,21 @@ public class LoginActivity extends BaseActivity {
     }
 
     private void goToMain() {
-        Intent intent = new Intent(this, MainActivity.class);
+        String email = com.example.myapplication.data.supabase.SupabaseClient
+                .getInstance().getUserEmail();
+
+        Log.d("LoginActivity", "goToMain() email: " + email);
+
+        Intent intent;
+
+        if ("admin@gmail.com".equalsIgnoreCase(email)) {
+            Log.d("LoginActivity", "→ Переход на AdminPanelActivity");
+            intent = new Intent(this, AdminPanelActivity.class);
+        } else {
+            Log.d("LoginActivity", "→ Переход на MainActivity (турист)");
+            intent = new Intent(this, MainActivity.class);
+        }
+
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();

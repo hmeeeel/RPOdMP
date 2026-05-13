@@ -46,6 +46,8 @@
 <!--        </activity>-->
         <activity android:name=".ui.detail.MuseumDetailActivity" />
         <activity android:name=".ui.settings.SettingsActivity" />
+        <activity android:name=".ui.admin.AdminPanelActivity" />
+
         <activity
             android:name=".ui.add.AddMuseumActivity"
             android:exported="false"

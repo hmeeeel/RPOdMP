@@ -50,52 +50,93 @@ public class AdminRepository {
         return instance;
     }
 
+
     //  MODERATION
     public void getPendingRoutes(PlaceRepository.DataCallback<List<ModerationRoute>> callback) {
+        Log.d(TAG, "=== getPendingRoutes START ===");
+
         client.getHttpClient()
                 .newCall(client.dbRequest("route_statuses", "select=id&code=eq.pending").get().build())
                 .enqueue(new Callback() {
                     @Override public void onFailure(Call call, IOException e) {
+                        Log.e(TAG, "getPendingRoutes: FAIL при получении status_id", e);
                         mainHandler.post(() -> callback.onError(e));
                     }
                     @Override public void onResponse(Call call, Response r) throws IOException {
+                        String body = r.body().string();
+                        Log.d(TAG, "route_statuses response: HTTP " + r.code() + " body: " + body);
+
                         int pid = 0;
                         try {
-                            JsonArray a = JsonParser.parseString(r.body().string()).getAsJsonArray();
-                            if (a.size() > 0) pid = a.get(0).getAsJsonObject().get("id").getAsInt();
-                        } catch (Exception ignored) {}
-                        if (pid == 0) { mainHandler.post(() -> callback.onSuccess(new ArrayList<>())); return; }
+                            JsonArray a = JsonParser.parseString(body).getAsJsonArray();
+                            if (a.size() > 0) {
+                                pid = a.get(0).getAsJsonObject().get("id").getAsInt();
+                                Log.d(TAG, " pending status_id = " + pid);
+                            } else {
+                                Log.w(TAG, "⚠️ route_statuses вернул пустой массив! Проверь БД!");
+                            }
+                        } catch (Exception e) {
+                            Log.e(TAG, "Ошибка парсинга route_statuses", e);
+                        }
+
+                        if (pid == 0) {
+                            Log.w(TAG, " status_id для 'pending' не найден, возвращаю пустой список");
+                            mainHandler.post(() -> callback.onSuccess(new ArrayList<>()));
+                            return;
+                        }
                         fetchPending(pid, callback);
                     }
                 });
     }
 
     private void fetchPending(int statusId, PlaceRepository.DataCallback<List<ModerationRoute>> cb) {
+        Log.d(TAG, "=== fetchPending START с statusId=" + statusId + " ===");
+
         String q = "select=id,title,description,admin_note,created_at,author_id"
                 + "&status_id=eq." + statusId + "&order=created_at.asc";
+
+        Log.d(TAG, "Запрос к routes: " + q);
+
         client.getHttpClient()
                 .newCall(client.dbRequest("routes", q).get().build())
                 .enqueue(new Callback() {
                     @Override public void onFailure(Call call, IOException e) {
+                        Log.e(TAG, "fetchPending: FAIL при получении routes", e);
                         mainHandler.post(() -> cb.onError(e));
                     }
                     @Override public void onResponse(Call call, Response r) throws IOException {
                         String body = r.body().string();
+                        Log.d(TAG, "routes response: HTTP " + r.code());
+                        Log.d(TAG, "routes body: " + body);
+
                         if (!r.isSuccessful()) {
+                            Log.e(TAG, " routes вернул ошибку " + r.code());
                             mainHandler.post(() -> cb.onError(new Exception("routes " + r.code())));
                             return;
                         }
+
                         List<ModerationRoute> list = parseModerationRoutes(body);
-                        if (list.isEmpty()) { mainHandler.post(() -> cb.onSuccess(list)); return; }
+                        Log.d(TAG, " Распарсили " + list.size() + " маршрутов");
+
+                        if (list.isEmpty()) {
+                            Log.w(TAG, "⚠️ Маршрутов на модерации нет");
+                            mainHandler.post(() -> cb.onSuccess(list));
+                            return;
+                        }
+
                         enrichRoutes(list, cb);
                     }
                 });
     }
 
     private List<ModerationRoute> parseModerationRoutes(String json) {
+        Log.d(TAG, "=== parseModerationRoutes ===");
         List<ModerationRoute> list = new ArrayList<>();
         try {
-            for (JsonElement el : JsonParser.parseString(json).getAsJsonArray()) {
+            JsonArray arr = JsonParser.parseString(json).getAsJsonArray();
+            Log.d(TAG, "JSON массив размером: " + arr.size());
+
+            for (JsonElement el : arr) {
                 JsonObject j = el.getAsJsonObject();
                 ModerationRoute mr = new ModerationRoute();
                 mr.setRouteId(str(j, "id"));
@@ -106,8 +147,12 @@ public class AdminRepository {
                 mr.setAuthorId(str(j, "author_id"));
                 mr.setStatusCode("pending");
                 list.add(mr);
+
+                Log.d(TAG, "  route #" + mr.getRouteId() + ": " + mr.getTitle());
             }
-        } catch (Exception e) { Log.e(TAG, "parseModerationRoutes", e); }
+        } catch (Exception e) {
+            Log.e(TAG, " parseModerationRoutes exception", e);
+        }
         return list;
     }
 

@@ -28,4 +28,22 @@
 
     <color name="selection_highlight_selector_dark">#E3F2FD</color>
     <color name="selection_highlight_dark">#E3F2FD</color>
+
+
+    <color name="admin_note_bg">#FFF8E1</color>
+    <color name="admin_note_border">#FFD54F</color>
+
+    <!-- Night-mode версии (в res/values-night/) -->
+    <!-- admin_note_bg -> #2E2A1A -->
+    <!-- admin_note_border -> #7A6A20 -->
+
+    <!-- Chip категории -->
+    <color name="category_chip_bg">#1A6200EE</color><!-- 10% от colorPrimary -->
+
+    <!-- Семафорные цвета -->
+    <color name="green_600">#43A047</color>
+    <color name="red_500">#E53935</color>
+    <color name="orange_500">#FF9800</color>
+
+
 </resources>

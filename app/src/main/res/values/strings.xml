@@ -202,4 +202,57 @@
     <string name="btn_edit_route">Редактировать маршрут</string>
     <string name="edit_route">Редактирование маршрута</string>
     <string name="route_updated">Маршрут обновлён</string>
+
+    <string name="admin_panel_title">Панель администратора</string>
+    <string name="access_denied">Доступ запрещён</string>
+
+    <!-- Вкладки -->
+    <string name="tab_moderation">Модерация</string>
+    <string name="tab_users">Пользователи</string>
+    <string name="tab_analytics">Аналитика</string>
+
+
+
+    <!-- Карточка маршрута в очереди модерации -->
+    <string name="author_format">Автор: %s</string>
+    <string name="points_format">Точек маршрута: %d</string>
+    <string name="created_format">Создан: %s</string>
+    <string name="places_preview">Места: %s</string>
+    <string name="previous_note_label">Заметка администратора</string>
+    <string name="previous_note_format">Предыдущая заметка: %s</string>
+
+    <!-- Кнопки модерации -->
+    <string name="approve">Одобрить</string>
+    <string name="reject">Отклонить</string>
+
+    <!-- Диалог заметки -->
+    <string name="approve_route_title">Одобрить маршрут?</string>
+    <string name="reject_route_title">Отклонить маршрут?</string>
+    <string name="admin_note_hint">Заметка (необязательно)</string>
+    <string name="admin_note_hint_detail">Заметка будет видна автору маршрута.</string>
+    <string name="btn_confirm_approve">Одобрить</string>
+    <string name="btn_confirm_reject">Отклонить</string>
+    <string name="btn_cancel">Отмена</string>
+
+    <!-- Сообщения об успехе -->
+    <string name="route_approved">Маршрут одобрен и опубликован</string>
+    <string name="route_rejected">Маршрут отклонён и возвращён в черновики</string>
+    <string name="error_moderation_action">Ошибка при выполнении действия</string>
+
+    <!-- Пустое состояние модерации -->
+    <string name="no_pending_routes">Нет маршрутов на модерации</string>
+
+    <!-- Статистика пользователей -->
+    <string name="no_users">Нет пользователей</string>
+    <string name="routes_created_format">Создано маршрутов: %d</string>
+    <string name="routes_saved_format">Сохранено маршрутов: %d</string>
+
+    <!-- Аналитика -->
+    <string name="no_analytics">Нет данных для отображения</string>
+    <string name="times_in_routes">Добавлено в маршруты: %d раз</string>
+    <string name="times_in_routes_short">раз в\nмаршрутах</string>
+    <string name="top_places_title">Топ-10 популярных мест</string>
+
+    <string name="previous_note">previous_note</string>
+
 </resources>
