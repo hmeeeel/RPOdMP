@@ -7,6 +7,7 @@ import android.util.Log;
 import com.example.myapplication.data.model.Place;
 import com.example.myapplication.data.repository.PlaceRepository;
 import com.example.myapplication.ui.routes.RouteCard;
+import com.example.myapplication.ui.routes.RouteDetailViewModel;
 import com.example.myapplication.ui.routes.RoutePoint;
 import com.example.myapplication.ui.routes.RouteReview;
 import com.google.gson.JsonArray;
@@ -914,4 +915,200 @@ public class RouteRepository {
         return j.has(k) && !j.get(k).isJsonNull() && j.get(k).getAsBoolean();
     }
 
+
+    public void updateRoute(String routeId,
+                            String title,
+                            String description,
+                            boolean isPublic,
+                            List<RoutePoint> points,
+                            PlaceRepository.DataCallback<Void> callback) {
+
+        // 1. Получаем статус (pending или draft)
+        String statusCode  = isPublic ? "pending" : "draft";
+        String statusQuery = "select=id&code=eq." + statusCode;
+
+        client.getHttpClient()
+                .newCall(client.dbRequest("route_statuses", statusQuery).get().build())
+                .enqueue(new Callback() {
+                    @Override
+                    public void onFailure(Call call, IOException e) {
+                        mainHandler.post(() -> callback.onError(e));
+                    }
+
+                    @Override
+                    public void onResponse(Call call, Response r) throws IOException {
+                        String body = r.body().string();
+                        int statusId = 1;
+                        try {
+                            JsonArray arr = JsonParser.parseString(body).getAsJsonArray();
+                            if (arr.size() > 0) {
+                                statusId = arr.get(0).getAsJsonObject()
+                                        .get("id").getAsInt();
+                            }
+                        } catch (Exception ignored) {}
+
+                        updateRouteHeader(routeId, title, description,
+                                statusId, points, callback);
+                    }
+                });
+    }
+
+    // 2. Обновляем заголовок маршрута (routes таблица)
+    private void updateRouteHeader(String routeId,
+                                   String title,
+                                   String description,
+                                   int statusId,
+                                   List<RoutePoint> points,
+                                   PlaceRepository.DataCallback<Void> callback) {
+
+        JsonObject body = new JsonObject();
+        body.addProperty("title",       title);
+        body.addProperty("description", description);
+        body.addProperty("status_id",   statusId);
+        // updated_at обновится автоматически через триггер trg_routes_updated_at
+
+        RequestBody rb = RequestBody.create(body.toString(), SupabaseClient.JSON);
+
+        client.getHttpClient()
+                .newCall(client.dbRequest("routes", "id=eq." + routeId)
+                        .addHeader("Prefer", "return=minimal")
+                        .patch(rb).build())
+                .enqueue(new Callback() {
+                    @Override
+                    public void onFailure(Call call, IOException e) {
+                        mainHandler.post(() -> callback.onError(e));
+                    }
+
+                    @Override
+                    public void onResponse(Call call, Response r) throws IOException {
+                        if (!r.isSuccessful()) {
+                            String b = r.body().string();
+                            mainHandler.post(() -> callback.onError(
+                                    new Exception("updateRoute " + r.code() + ": " + b)));
+                            return;
+                        }
+                        // 3. Пересоздаём точки маршрута
+                        replaceRoutePoints(routeId, points, callback);
+                    }
+                });
+    }
+
+    // 3. Удаляем старые точки и вставляем новые
+    private void replaceRoutePoints(String routeId,
+                                    List<RoutePoint> points,
+                                    PlaceRepository.DataCallback<Void> callback) {
+
+        // Сначала удаляем все старые точки
+        client.getHttpClient()
+                .newCall(client.dbRequest("route_points",
+                        "route_id=eq." + routeId).delete().build())
+                .enqueue(new Callback() {
+                    @Override
+                    public void onFailure(Call call, IOException e) {
+                        mainHandler.post(() -> callback.onError(e));
+                    }
+
+                    @Override
+                    public void onResponse(Call call, Response r) throws IOException {
+                        if (!r.isSuccessful()) {
+                            String b = r.body().string();
+                            mainHandler.post(() -> callback.onError(
+                                    new Exception("deletePoints " + r.code() + ": " + b)));
+                            return;
+                        }
+                        // Вставляем новые точки
+                        insertNewRoutePoints(routeId, points, callback);
+                    }
+                });
+    }
+
+    // 4. Вставляем новые точки
+    private void insertNewRoutePoints(String routeId,
+                                      List<RoutePoint> points,
+                                      PlaceRepository.DataCallback<Void> callback) {
+        JsonArray arr = new JsonArray();
+        for (RoutePoint rp : points) {
+            JsonObject row = new JsonObject();
+            try {
+                row.addProperty("route_id", Long.parseLong(routeId));
+            } catch (NumberFormatException e) {
+                row.addProperty("route_id", routeId);
+            }
+            row.addProperty("place_id",    rp.getPlaceId());
+            row.addProperty("point_order", rp.getPointOrder());
+            arr.add(row);
+        }
+
+        RequestBody rb = RequestBody.create(arr.toString(), SupabaseClient.JSON);
+        client.getHttpClient()
+                .newCall(client.dbRequest("route_points", null)
+                        .addHeader("Prefer", "return=minimal")
+                        .post(rb).build())
+                .enqueue(new Callback() {
+                    @Override
+                    public void onFailure(Call call, IOException e) {
+                        mainHandler.post(() -> callback.onError(e));
+                    }
+
+                    @Override
+                    public void onResponse(Call call, Response r) throws IOException {
+                        if (!r.isSuccessful()) {
+                            String b = r.body().string();
+                            mainHandler.post(() -> callback.onError(
+                                    new Exception("insertNewPoints " + r.code() + ": " + b)));
+                            return;
+                        }
+                        mainHandler.post(() -> callback.onSuccess(null));
+                    }
+                });
+    }
+
+
+    public void fetchRouteHeader(String routeId,
+                                 PlaceRepository.DataCallback<RouteDetailViewModel.RouteHeaderData> callback) {
+        String query = "select=title,description,admin_note,"
+                + "route_statuses!status_id(code)"
+                + "&id=eq." + routeId;
+
+        client.getHttpClient()
+                .newCall(client.dbRequest("routes", query).get().build())
+                .enqueue(new Callback() {
+                    @Override
+                    public void onFailure(Call call, IOException e) {
+                        mainHandler.post(() -> callback.onError(e));
+                    }
+
+                    @Override
+                    public void onResponse(Call call, Response r) throws IOException {
+                        String body = r.body().string();
+                        if (!r.isSuccessful()) {
+                            mainHandler.post(() -> callback.onError(
+                                    new Exception("fetchHeader " + r.code())));
+                            return;
+                        }
+                        try {
+                            JsonArray arr = JsonParser.parseString(body).getAsJsonArray();
+                            if (arr.size() == 0) {
+                                mainHandler.post(() -> callback.onError(
+                                        new Exception("Route not found")));
+                                return;
+                            }
+                            JsonObject j      = arr.get(0).getAsJsonObject();
+                            String title      = str(j, "title");
+                            String desc       = str(j, "description");
+                            String adminNote  = str(j, "admin_note");
+                            String statusCode = "";
+                            if (j.has("route_statuses") && !j.get("route_statuses").isJsonNull()) {
+                                statusCode = str(j.getAsJsonObject("route_statuses"), "code");
+                            }
+                            RouteDetailViewModel.RouteHeaderData data =
+                                    new RouteDetailViewModel.RouteHeaderData(
+                                            title, desc, statusCode, adminNote);
+                            mainHandler.post(() -> callback.onSuccess(data));
+                        } catch (Exception e) {
+                            mainHandler.post(() -> callback.onError(e));
+                        }
+                    }
+                });
+    }
 }

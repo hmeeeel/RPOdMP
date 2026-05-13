@@ -43,6 +43,10 @@ public class RouteDetailActivity extends BaseActivity
     private List<RoutePoint> points = new ArrayList<>();
     private List<RouteReview>               reviews = new ArrayList<>();
     private ActivityResultLauncher<Intent> detailLauncher;
+
+    private MenuItem menuItemEdit;
+
+    private ActivityResultLauncher<Intent> editLauncher;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -53,15 +57,48 @@ public class RouteDetailActivity extends BaseActivity
 
         viewModel = new ViewModelProvider(this).get(RouteDetailViewModel.class);
 
+        // Launcher для возврата из MuseumDetailActivity
         detailLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
-                result -> {
-                    // Возврат из MuseumDetailActivity или AddMuseumActivity
-                    // Перезагружаем точки маршрута с актуальным is_visited
-                    viewModel.reloadPoints(routeCard.getId());
-                }
+                result -> viewModel.reloadPoints(routeCard.getId())
         );
 
+
+      /*  editLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == RESULT_OK) {
+
+                        // ← ИСПОЛЬЗУЕМ reloadAllData() вместо loadDetail()
+                        // чтобы не пересоздавать WebSocket подписку
+                        viewModel.reloadAllData();
+
+                        Intent data = result.getData();
+                        if (data != null) {
+                            String newTitle = data.getStringExtra("updated_title");
+                            if (newTitle != null) {
+                                if (getSupportActionBar() != null) {
+                                    getSupportActionBar().setTitle(newTitle);
+                                }
+                                textTitle.setText(newTitle);
+                                routeCard.setTitle(newTitle);
+                            }
+                        }
+                    }
+                }
+        );*/
+        editLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == RESULT_OK) {
+                        // reloadAllData загрузит header через loadRouteHeader
+                        // observer routeHeader автоматически обновит UI
+                        viewModel.reloadAllData();
+                        // ← Убираем ручное обновление textTitle и routeCard.setTitle
+                        // это теперь делает observer routeHeader
+                    }
+                }
+        );
         setupToolbar();
         bindHeader();
         setupRecyclerViews();
@@ -90,15 +127,36 @@ public class RouteDetailActivity extends BaseActivity
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.route_detail_menu, menu);
+        menuItemEdit = menu.findItem(R.id.action_edit_route);
+
+        String numericId = viewModel.getCurrentNumericUserId();
+        String authorId  = routeCard.getAuthorId();
+
+        android.util.Log.d("EDIT_BTN", "numericId = " + numericId);
+        android.util.Log.d("EDIT_BTN", "authorId  = " + authorId);
+        android.util.Log.d("EDIT_BTN", "isOwner   = " + (numericId != null && numericId.equals(authorId)));
+
+        boolean isOwner = numericId != null && numericId.equals(authorId);
+        if (menuItemEdit != null) {
+            menuItemEdit.setVisible(isOwner);
+        }
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.action_view_on_map) {
+        int id = item.getItemId();
+
+        if (id == R.id.action_view_on_map) {
             openMapPreview();
             return true;
         }
+
+        if (id == R.id.action_edit_route) {
+            openEditScreen();
+            return true;
+        }
+
         return super.onOptionsItemSelected(item);
     }
 
@@ -113,10 +171,12 @@ public class RouteDetailActivity extends BaseActivity
         btnSave         = findViewById(R.id.btnDetailSaveRoute);
         progressBar     = findViewById(R.id.detailRouteProgress);
 
+        // Заполняем данные
         textTitle.setText(routeCard.getTitle());
         textAuthor.setText(routeCard.getAuthorNickname());
 
-        if (routeCard.getDescription() != null && !routeCard.getDescription().isEmpty()) {
+        if (routeCard.getDescription() != null
+                && !routeCard.getDescription().isEmpty()) {
             textDescription.setVisibility(View.VISIBLE);
             textDescription.setText(routeCard.getDescription());
         } else {
@@ -129,21 +189,26 @@ public class RouteDetailActivity extends BaseActivity
             textRating.setVisibility(View.VISIBLE);
             textRating.setText(String.format("★ %.1f · %d %s · ❤ %d",
                     routeCard.getAverageRating(),
-                    routeCard.getReviewsCount(), getString(R.string.reviews_label),
+                    routeCard.getReviewsCount(),
+                    getString(R.string.reviews_label),
                     routeCard.getLikesCount()));
         } else {
             textRating.setVisibility(View.GONE);
         }
 
-        if (routeCard.getAdminNote() != null && !routeCard.getAdminNote().isEmpty()) {
+        if (routeCard.getAdminNote() != null
+                && !routeCard.getAdminNote().isEmpty()) {
             textAdminNote.setVisibility(View.VISIBLE);
             textAdminNote.setText("💡 " + routeCard.getAdminNote());
         } else {
             textAdminNote.setVisibility(View.GONE);
         }
 
-        String uid      = viewModel.getCurrentUserId();
-        boolean isOwner = uid != null && uid.equals(routeCard.getAuthorId());
+        // Кнопка "Сохранить" — только для чужих опубликованных маршрутов
+        String  numericId = viewModel.getCurrentNumericUserId();
+        boolean isOwner   = numericId != null
+                && numericId.equals(routeCard.getAuthorId());
+
         if (isOwner || !"published".equals(routeCard.getStatusCode())) {
             btnSave.setVisibility(View.GONE);
         } else {
@@ -153,6 +218,18 @@ public class RouteDetailActivity extends BaseActivity
         }
     }
 
+
+    private void openEditScreen() {
+        Intent intent = new Intent(this, CreateRouteActivity.class);
+        intent.putExtra("mode",        "edit");
+        intent.putExtra("route_id",    routeCard.getId());
+        intent.putExtra("route_title", routeCard.getTitle());
+        intent.putExtra("route_desc",  routeCard.getDescription());
+        intent.putExtra("is_public",
+                "published".equals(routeCard.getStatusCode())
+                        || "pending".equals(routeCard.getStatusCode()));
+        editLauncher.launch(intent);
+    }
     private void setupRecyclerViews() {
         rvPoints = findViewById(R.id.recyclerDetailPoints);
         rvPoints.setLayoutManager(new LinearLayoutManager(this));
@@ -167,7 +244,8 @@ public class RouteDetailActivity extends BaseActivity
 
     private void observeData() {
         viewModel.isLoading.observe(this, loading -> {
-            progressBar.setVisibility(Boolean.TRUE.equals(loading) ? View.VISIBLE : View.GONE);
+            progressBar.setVisibility(
+                    Boolean.TRUE.equals(loading) ? View.VISIBLE : View.GONE);
         });
 
         viewModel.points.observe(this, data -> {
@@ -188,13 +266,47 @@ public class RouteDetailActivity extends BaseActivity
             }
         });
 
+        //  observer — обновляет header автоматически
+        viewModel.routeHeader.observe(this, header -> {
+            if (header == null) return;
+
+            // Обновляем routeCard актуальными данными
+            routeCard.setTitle(header.title);
+            routeCard.setDescription(header.description);
+            routeCard.setStatusCode(header.statusCode);
+            routeCard.setAdminNote(header.adminNote);
+
+            // Обновляем UI
+            textTitle.setText(header.title);
+            if (getSupportActionBar() != null) {
+                getSupportActionBar().setTitle(header.title);
+            }
+
+            if (header.description != null && !header.description.isEmpty()) {
+                textDescription.setVisibility(View.VISIBLE);
+                textDescription.setText(header.description);
+            } else {
+                textDescription.setVisibility(View.GONE);
+            }
+
+            textStatus.setText(getStatusText());
+
+            if (header.adminNote != null && !header.adminNote.isEmpty()) {
+                textAdminNote.setVisibility(View.VISIBLE);
+                textAdminNote.setText("💡 " + header.adminNote);
+            } else {
+                textAdminNote.setVisibility(View.GONE);
+            }
+        });
+
         viewModel.error.observe(this, msg -> {
             if (msg != null) Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
         });
 
         viewModel.event.observe(this, evt -> {
             if ("saved_ok".equals(evt)) {
-                Toast.makeText(this, R.string.route_saved_to_favorites, Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.route_saved_to_favorites,
+                        Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -205,9 +317,6 @@ public class RouteDetailActivity extends BaseActivity
                 ? R.drawable.ic_bookmark_filled
                 : R.drawable.ic_bookmark_border);
     }
-
-
-
 
 
     //  Карта

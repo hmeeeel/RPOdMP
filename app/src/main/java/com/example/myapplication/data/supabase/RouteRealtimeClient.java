@@ -16,10 +16,7 @@ import okhttp3.WebSocketListener;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-/**
- * Realtime-подписка для таблицы routes и user_saved_routes.
- * Точная копия паттерна SupabaseRealtimeClient.
- */
+//Realtime-подписка для таблицы routes и user_saved_routes. Точная копия паттерна SupabaseRealtimeClient.
 public class RouteRealtimeClient {
 
     private static final String TAG            = "RouteRealtime";
@@ -74,7 +71,11 @@ public class RouteRealtimeClient {
                         sendJoin(ws, "user_saved_routes", "user_id=eq." + userId);
                         startHeartbeat(ws);
                     }
-                    @Override public void onMessage(WebSocket ws, String text) { handleMessage(text); }
+                    @Override
+                    public void onMessage(WebSocket ws, String text) {
+                        Log.d(TAG, "RAW: " + text);  // ← добавь эту строку
+                        handleMessage(text);
+                    }
                     @Override public void onClosing(WebSocket ws, int code, String reason) { ws.close(1000, null); stopHeartbeat(); }
                     @Override public void onFailure(WebSocket ws, Throwable t, Response r) {
                         Log.w(TAG, "WS failure: " + t.getMessage());
@@ -86,16 +87,28 @@ public class RouteRealtimeClient {
 
     private void handleMessage(String text) {
         try {
-            JSONObject msg   = new JSONObject(text);
-            String     event = msg.optString("event", "");
+            JSONObject msg = new JSONObject(text);
+            String event = msg.optString("event", "");
+
+            Log.d(TAG, "RAW: " + text); // временно для диагностики
 
             if ("postgres_changes".equals(event)) {
                 JSONObject payload = msg.optJSONObject("payload");
-                String     table   = payload != null ? payload.optString("table", "") : "";
+                if (payload == null) return;
+
+                // payload -> data -> table
+                JSONObject data = payload.optJSONObject("data");
+                if (data == null) return;
+
+                String table = data.optString("table", "");
+                String type  = data.optString("type", "");
+
+                Log.d(TAG, "Change: table=" + table + " type=" + type);
 
                 if ("routes".equals(table)) {
                     if (active && routeChangeCallback != null)
                         mainHandler.post(routeChangeCallback::onChange);
+
                 } else if ("user_saved_routes".equals(table)) {
                     if (active && savedChangeCallback != null)
                         mainHandler.post(savedChangeCallback::onChange);

@@ -117,6 +117,7 @@ public class SupabaseRealtimeClient {
     }
 
     private void handleMessage(String text) {
+        Log.d(TAG, "RAW MESSAGE: " + text);
         try {
             JSONObject msg = new JSONObject(text);
             String event = msg.optString("event", "");

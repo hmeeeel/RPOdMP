@@ -198,4 +198,8 @@
 
     <string name="ic_bookmark_border">ic_bookmark_border</string>
     <string name="ic_bookmark_filled">ic_bookmark_filled</string>
+
+    <string name="btn_edit_route">Редактировать маршрут</string>
+    <string name="edit_route">Редактирование маршрута</string>
+    <string name="route_updated">Маршрут обновлён</string>
 </resources>

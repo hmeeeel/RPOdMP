@@ -48,6 +48,9 @@ public class CreateRouteActivity extends BaseActivity
     private List<RoutePoint> routePoints = new ArrayList<>();
     private PlaceRepository placeRepository;
 
+    private boolean isEditMode  = false;
+    private String  editRouteId = null;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -55,11 +58,21 @@ public class CreateRouteActivity extends BaseActivity
 
         placeRepository = PlaceRepository.getInstance(this);
 
+        isEditMode  = "edit".equals(getIntent().getStringExtra("mode"));
+        editRouteId = getIntent().getStringExtra("route_id");
+
         setupToolbar();
         initViews();
         setupCategorySpinner();
         setupRecyclerView();
-        loadSelectedPlaces();
+
+        if (isEditMode) {
+            // Режим редактирования — загружаем существующие данные
+            prefillForEdit();
+        } else {
+            // Режим создания — загружаем выбранные места
+            loadSelectedPlaces();
+        }
     }
 
     private void setupToolbar() {
@@ -67,7 +80,52 @@ public class CreateRouteActivity extends BaseActivity
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setTitle(
+                    isEditMode
+                            ? getString(R.string.edit_route)
+                            : getString(R.string.create_route)
+            );
         }
+    }
+
+    //  предзаполнение полей при редактировании
+    private void prefillForEdit() {
+        // Заполняем текстовые поля из Intent
+        String title   = getIntent().getStringExtra("route_title");
+        String desc    = getIntent().getStringExtra("route_desc");
+        boolean pub    = getIntent().getBooleanExtra("is_public", false);
+
+        if (title != null) editRouteTitle.setText(title);
+        if (desc  != null) editRouteDescription.setText(desc);
+        switchPublic.setChecked(pub);
+
+        // Загружаем точки маршрута из БД
+        if (editRouteId != null) {
+            loadRoutePointsForEdit(editRouteId);
+        }
+    }
+
+    // загрузка точек маршрута для редактирования
+    private void loadRoutePointsForEdit(String routeId) {
+        RouteRepository.getInstance().getRoutePoints(
+                routeId,
+                new PlaceRepository.DataCallback<List<RoutePoint>>() {
+                    @Override
+                    public void onSuccess(List<RoutePoint> data) {
+                        routePoints.clear();
+                        if (data != null) routePoints.addAll(data);
+                        adapter.notifyDataSetChanged();
+                        updateEmptyState();
+                    }
+
+                    @Override
+                    public void onError(Exception e) {
+                        Toast.makeText(CreateRouteActivity.this,
+                                "Ошибка загрузки точек: " + e.getMessage(),
+                                Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
     }
 
     @Override
@@ -268,7 +326,7 @@ public class CreateRouteActivity extends BaseActivity
     private void saveRoute() {
         String title = editRouteTitle.getText().toString().trim();
 
-        if (TextUtils.isEmpty(title)) {
+        if (title.isEmpty()) {
             editRouteTitle.setError(getString(R.string.error_route_title));
             editRouteTitle.requestFocus();
             return;
@@ -279,18 +337,59 @@ public class CreateRouteActivity extends BaseActivity
         }
 
         String  description = editRouteDescription.getText().toString().trim();
-        String  category    = spinnerCategory.getText().toString();
         boolean isPublic    = switchPublic.isChecked();
-        String  userId      = SupabaseClient.getInstance().getUserId();
 
-        // routePoints — уже List<RoutePoint> (ui.routes.RoutePoint)
-        RouteRepository.getInstance().createRoute(
-                userId,
+        if (isEditMode && editRouteId != null) {
+            // РЕЖИМ РЕДАКТИРОВАНИЯ — вызываем UPDATE
+            updateExistingRoute(title, description, isPublic);
+        } else {
+            // РЕЖИМ СОЗДАНИЯ — оставляем как было
+            createNewRoute(title, description, isPublic);
+        }
+    }
+
+    private void updateExistingRoute(String title,
+                                     String description,
+                                     boolean isPublic) {
+        RouteRepository.getInstance().updateRoute(
+                editRouteId,
                 title,
                 description,
                 isPublic,
-                category,
                 routePoints,
+                new PlaceRepository.DataCallback<Void>() {
+                    @Override
+                    public void onSuccess(Void v) {
+                        Toast.makeText(CreateRouteActivity.this,
+                                R.string.route_updated,
+                                Toast.LENGTH_SHORT).show();
+
+                        // Возвращаем новое название в RouteDetailActivity
+                        Intent result = new Intent();
+                        result.putExtra("updated_title", title);
+                        setResult(RESULT_OK, result);
+                        finish();
+                    }
+
+                    @Override
+                    public void onError(Exception e) {
+                        Toast.makeText(CreateRouteActivity.this,
+                                "Ошибка обновления: " + e.getMessage(),
+                                Toast.LENGTH_LONG).show();
+                    }
+                }
+        );
+    }
+
+    private void createNewRoute(String title,
+                                String description,
+                                boolean isPublic) {
+        String category = spinnerCategory.getText().toString();
+        String userId   = SupabaseClient.getInstance().getUserId();
+
+        RouteRepository.getInstance().createRoute(
+                userId, title, description, isPublic,
+                category, routePoints,
                 new PlaceRepository.DataCallback<String>() {
                     @Override
                     public void onSuccess(String routeId) {
@@ -299,6 +398,7 @@ public class CreateRouteActivity extends BaseActivity
                         setResult(RESULT_OK);
                         finish();
                     }
+
                     @Override
                     public void onError(Exception e) {
                         Toast.makeText(CreateRouteActivity.this,

@@ -1,10 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
+
     <item
         android:id="@+id/action_view_on_map"
         android:title="@string/view_on_map"
         android:icon="@android:drawable/ic_dialog_map"
         app:iconTint="?attr/iconColor"
         app:showAsAction="ifRoom"/>
+
+    <item
+        android:id="@+id/action_edit_route"
+        android:title="@string/btn_edit_route"
+        android:icon="@drawable/ic_edit_24dp"
+        app:iconTint="?attr/iconColor"
+        app:showAsAction="ifRoom"
+        android:visible="false"/>
+
 </menu>
